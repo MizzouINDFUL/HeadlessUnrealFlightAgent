@@ -1,7 +1,9 @@
 /src/logs/*
 /bags/*
-/src/plugins_*/*/Intermediate/
-/src/plugins_*/*/Binaries/
+/src/plugins_copy/*/Intermediate/
+/src/plugins_copy/*/Binaries/
+/src/plugins_link/*/Intermediate/
+/src/plugins_link/*/Binaries/
 /src/ros2/
 /tmp/
 /src/setup/unreal/password.txt
