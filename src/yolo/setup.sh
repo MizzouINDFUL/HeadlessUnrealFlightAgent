@@ -1,0 +1,1 @@
+t=ultralytics/ultralytics:latest && docker pull $t

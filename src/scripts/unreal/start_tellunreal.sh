@@ -1,0 +1,2 @@
+#create an alias called 'tellunreal' inside tellunreal tmux window that will send the argument to command.txt in src/plugins_link/CommandLineExternal
+tmux send-keys -t SIM:tellunreal "alias tellunreal=\"echo \$1 > $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/command.txt\"" Enter

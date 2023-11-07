@@ -1,0 +1,1 @@
+#just like unlink_plugin.sh but for linking plugi

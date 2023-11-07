@@ -1,0 +1,8 @@
+/src/logs/*
+/bags/*
+/src/plugins_*/*/Intermediate/
+/src/plugins_*/*/Binaries/
+/src/ros2/
+/tmp/
+/src/setup/unreal/password.txt
+/src/setup/unreal/username.txt
