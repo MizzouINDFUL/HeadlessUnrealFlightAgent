@@ -65,21 +65,21 @@ function bind_script_to_event {
    fi
 
    #focus on the Orchestrator window
-   tmux select-window -t SIM:Orchestrator
+   tmux select-window -t $SESSIONNAME:Orchestrator
    #focus on the initial pane of the orchestrator window + split it vertically and run the script in the new pane
    sleep 0.05
 
    #ddo split-window -h if there is only one pane, otherwise do split-window -v
 
-   tmux send-keys -t SIM:Orchestrator "tmux split-window -h" Enter
+   tmux send-keys -t $SESSIONNAME:Orchestrator "tmux split-window -h" Enter
 
    sleep 0.2
-   # tmux send-keys -t SIM:Orchestrator "tmux rename-window -t \$TMUX_PANE $PANENAME" Enter
-   tmux send-keys -t SIM:Orchestrator "$UELAUNCHER_HOME/src/scripts/unreal/unreal_tracker.sh \"$1\" \"$2\" \"$CLEARLOG\"" Enter
+   # tmux send-keys -t $SESSIONNAME:Orchestrator "tmux rename-window -t \$TMUX_PANE $PANENAME" Enter
+   tmux send-keys -t $SESSIONNAME:Orchestrator "$UELAUNCHER_HOME/src/scripts/unreal/unreal_tracker.sh \"$1\" \"$2\" \"$CLEARLOG\"" Enter
    sleep 0.1
    #switch focus back to the first pane
-   tmux select-pane -t SIM:Orchestrator.0
-   tmux resize-pane -t SIM:Orchestrator.0 -x 30
+   tmux select-pane -t $SESSIONNAME:Orchestrator.0
+   tmux resize-pane -t $SESSIONNAME:Orchestrator.0 -x 30
 }
 
  function get_num_lives_lived {

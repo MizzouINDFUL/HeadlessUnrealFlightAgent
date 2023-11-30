@@ -22,9 +22,9 @@ while True:
         #terminate all tmux panes except for the first one
         #loop from num_topics to 1
         for i in range(num_topics, 0, -1):
-            os.system('tmux select-pane -t SIM:Bags-Extract.{}'.format(i))
+            os.system('tmux select-pane -t $SESSIONNAME:Bags-Extract.{}'.format(i))
             time.sleep(0.1)
-            os.system('tmux send-keys -t SIM:Bags-Extract "exit" Enter')
+            os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "exit" Enter')
             time.sleep(0.1)
 
         break
@@ -40,7 +40,7 @@ while True:
     if(filename.isdigit()):
         num_done = num_done + 1
         if num_done == num_topics:
-            # os.system('tmux send-keys -t SIM:tellunreal "tellunreal \'py print(\\"life done\d\")\'" Enter')
+            # os.system('tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal \'py print(\\"life done\d\")\'" Enter')
             topics_extracted = True
             continue
         else:
@@ -48,7 +48,7 @@ while True:
 
     if (filename == 'rosbag done'):
         print('rosbag is done playing')
-        # os.system('tmux send-keys -t SIM:tellunreal "tellunreal \'py print(\\"life done\d\")\'" Enter')
+        # os.system('tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal \'py print(\\"life done\d\")\'" Enter')
         rosbag_done = True
         continue
 
@@ -67,15 +67,15 @@ while True:
 
         filename = filename.replace(':', ' ')
 
-        #focus of SIM:Bafs-Extract tmux window
-        os.system('tmux select-window -t SIM:Bags-Extract')
+        #focus of $SESSIONNAME:Bafs-Extract tmux window
+        os.system('tmux select-window -t $SESSIONNAME:Bags-Extract')
         os.system('tmux split-window -h')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t SIM:Bags-Extract "docker exec -it ros /bin/bash" Enter')
+        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it ros /bin/bash" Enter')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t SIM:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
+        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t SIM:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(filename))
-        os.system('tmux select-pane -t SIM:Bags-Extract.0')
-        os.system('tmux resize-pane -t SIM:Bags-Extract.0 -x 30')
+        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(filename))
+        os.system('tmux select-pane -t $SESSIONNAME:Bags-Extract.0')
+        os.system('tmux resize-pane -t $SESSIONNAME:Bags-Extract.0 -x 30')
         time.sleep(1)

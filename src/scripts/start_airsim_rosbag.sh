@@ -7,5 +7,5 @@ LIFE_NUM=$(ls -l $UELAUNCHER_HOME/bags/$SIM_START_DATE/ | grep -c ^d)
 LIFE_NUM=$(($LIFE_NUM+1))
 
 topics_regex=$($UELAUNCHER_HOME/src/scripts/bag_extraction/get_rosbag_topics_regex.sh)
-tmux send-keys -t SIM:ROS-Bags "source /opt/ros/noetic/setup.bash; cd /session/; mkdir $LIFE_NUM; cd $LIFE_NUM; rosbag record -a; exec bash" C-m
-# tmux send-keys -t SIM:ROS-Bags "source /opt/ros/noetic/setup.bash; cd /session/; mkdir $LIFE_NUM; cd $LIFE_NUM; rosbag record -e \"$topics_regex\" ros.bag; exec bash" C-m
+tmux send-keys -t $SESSIONNAME:ROS-Bags "source /opt/ros/noetic/setup.bash; cd /session/; mkdir $LIFE_NUM; cd $LIFE_NUM; rosbag record -a; exec bash" C-m
+# tmux send-keys -t $SESSIONNAME:ROS-Bags "source /opt/ros/noetic/setup.bash; cd /session/; mkdir $LIFE_NUM; cd $LIFE_NUM; rosbag record -e \"$topics_regex\" ros.bag; exec bash" C-m

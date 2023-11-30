@@ -10,7 +10,7 @@ if [ $CURR_LIFE -ge $simulation_num_lives ]; then
     tmux kill-session -t SIM
 else
     echo "Simulation is restarting"
-    tmux send-keys -t SIM:tellunreal "tellunreal 'py unreal.MindfulLib.start_life()'" C-m
+    tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py unreal.MindfulLib.start_life()'" C-m
     bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/start_airsim_rosbag.sh
     bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/listen_restart_signal.sh
     bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/unreal/stop_game.sh true

@@ -1,13 +1,18 @@
 --- # Config file for Unreal Launcher
+session:
+	basename: "SIM"
+	max: 1
+	
 unreal:
 	start_game: true
 	use_docker: false
 	headless: true
 	engine_path: "/home/mindful/EpicGames/UE5.1"
-	project_path: "/home/mindful/Documents/UnrealProjects/MountainVillageEnvironmen"
+	project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
 	actors_to_tag: "OrangeBall:TrackMe,Cone:TrackMe"
 
 simulation:
-	num_lives: 6
+	num_lives: 3
 	time: 120
 	tags_to_track: "TrackMe"
+	extract_on_end: false
