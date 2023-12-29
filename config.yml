@@ -4,15 +4,17 @@ session:
 	max: 1
 	
 unreal:
+	separate_session: false
 	start_game: true
-	use_docker: false
-	headless: true
+	use_docker: true
+	headless: false
+	docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
 	engine_path: "/home/mindful/EpicGames/UE5.1"
-	project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
-	actors_to_tag: "OrangeBall:TrackMe,Cone:TrackMe"
+	project_path: "/home/mindful/Documents/UnrealProjects/Downtown"
+	actors_to_tag: ""
 
 simulation:
 	num_lives: 3
-	time: 120
-	tags_to_track: "TrackMe"
-	extract_on_end: false
+	time: 80
+	tags_to_track: ""
+	extract_on_end: true

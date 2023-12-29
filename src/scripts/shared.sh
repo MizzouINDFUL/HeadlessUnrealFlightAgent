@@ -35,7 +35,7 @@ function parse_yaml {
 #this function will add a new tracker to the orchestrator
 function bind_script_to_event {
    #check if the SIM session exists
-   if ! tmux has-session -t SIM 2>/dev/null; then
+   if ! tmux has-session -t $SESSIONNAME 2>/dev/null; then
       echo "SIM session does not exist. Please start Unreal Launcher first!"
       exit 1
    fi
@@ -59,7 +59,7 @@ function bind_script_to_event {
    fi
 
    #check if the orchestrator window exists
-   if ! tmux list-windows -t SIM | grep -q "Orchestrator"; then
+   if ! tmux list-windows -t $SESSIONNAME | grep -q "Orchestrator"; then
       echo "Orchestrator window does not exist. Please start Unreal Launcher first!"
       exit 1
    fi

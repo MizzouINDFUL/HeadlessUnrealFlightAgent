@@ -10,6 +10,11 @@ model = YOLO("yolov8n.pt")
 # Define the path to the RGB images folder
 rgb_folder = "/session/rgb"
 
+#if the folder is empty, then exit
+if not os.listdir(rgb_folder):
+    print('rgb folder is empty, exiting')
+    exit()
+
 # Load the ground truth data
 with open('/session/gt/ground_truth.json') as f:
     gt_data = json.load(f)

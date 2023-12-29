@@ -3,6 +3,9 @@ eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 if [ ! -d $unreal_project_path/Plugins ]; then
     mkdir $unreal_project_path/Plugins
+else
+    mv $unreal_project_path/Plugins $unreal_project_path/Plugins_original
+    mkdir $unreal_project_path/Plugins
 fi
 
 #for each folder in $UELAUNCHER_HOME/src/plugins_link, link it to the project in $unreal_project_path/Plugins. force to replace existing links

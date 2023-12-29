@@ -12,9 +12,11 @@ num_topics = 0
 num_done = 0
 rosbag_done = False
 topics_extracted = False
+skip = False
+
 while True:
 
-    if rosbag_done and topics_extracted:
+    if skip or (rosbag_done and topics_extracted):
         #close the socket
         s.close()
         print('done extracting topics')
@@ -35,6 +37,12 @@ while True:
         continue
     filename = data.decode('utf-8')
     print('received: ', filename)
+
+    #if filename is 'skip', then skip
+    if (filename == 'skip'):
+        print('skipping topics')
+        skip = True
+        continue
 
     #if filename is a digit, then it is a done message per topic
     if(filename.isdigit()):
@@ -71,7 +79,7 @@ while True:
         os.system('tmux select-window -t $SESSIONNAME:Bags-Extract')
         os.system('tmux split-window -h')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it ros /bin/bash" Enter')
+        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it $SESSIONNAME-ros /bin/bash" Enter')
         time.sleep(0.1)
         os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
         time.sleep(0.1)

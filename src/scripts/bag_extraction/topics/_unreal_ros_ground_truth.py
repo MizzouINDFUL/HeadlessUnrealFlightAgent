@@ -37,7 +37,17 @@ class Extractor():
     def gt_callback(self, data):
         print("received ground truth message")
         print(data.data)
-        frame_annotation = json.loads(data.data)
+        frame_annotation = {
+            "frameAnnotations": {
+                "f0": {
+                    "boundingBoxes": [],
+                    "timestamp": "2022-1-5T13:21:05.431000"
+                }
+            }
+        }
+        if data.data == "[]":
+            print("empty ground truth message")
+            return
 
         frame_annotation["frameAnnotations"]["f" + str(self.message_count)] = frame_annotation["frameAnnotations"].pop(list(frame_annotation["frameAnnotations"].keys())[0])
         self.message_count += 1

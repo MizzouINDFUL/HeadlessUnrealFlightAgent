@@ -1,1 +1,1 @@
-docker build -t airsim-ros .
+docker build -t unreal-launcher-airsim-ros .

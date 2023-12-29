@@ -9,7 +9,7 @@ sleep $simulation_time
 tmux send-keys -t $SESSIONNAME:ROS-Bags C-c
 
 #kill the AirSim window in SIM
-docker kill airsim-ros
+docker kill unreal-launcher-airsim-ros
 tmux kill-window -t $SESSIONNAME:AirSim
 
 sleep 5
@@ -17,20 +17,22 @@ sleep 5
 #send 'py unreal.MindfulLib.stop_life()' to tellunreal window in SIM session
 tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py unreal.MindfulLib.stop_life()'" C-m
 
-if [$simulation_extract_on_end == true]; then
+tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py" C-m
+
+if [ $simulation_extract_on_end == true ]; then
+
+    echo "Extracting bags"
 
     #create a new window called Bags-Extract in SIM session
-    tmux new-window -t SIM -n Bags-Extract
+    tmux new-window -t $SESSIONNAME -n Bags-Extract
     tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh; \
         eval $(parse_yaml $UELAUNCHER_HOME/config.yml)" C-m
-
-    tmux send-keys -t $SESSIONNAME:Bags-Extract "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py" C-m
 
     tmux send-keys -t $SESSIONNAME:Bags-Extract \
         "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py; \
         tmux kill-window -t $SESSIONNAME:ROS-Bags; \
-        docker kill yolo; \
-        docker run -it --rm --gpus all --name yolo -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/$(($NUM_LIVES+1)):/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py; \
+        docker kill $SESSIONNAME-yolo; \
+        docker run -it --rm --gpus all --name $SESSIONNAME-yolo -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/$(($NUM_LIVES+1)):/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py; \
         export NUM_LIVES=$(($NUM_LIVES+1)); \
         python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py; \
         tmux select-window -t $SESSIONNAME:Orchestrator; \
@@ -42,6 +44,7 @@ if [$simulation_extract_on_end == true]; then
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags
     tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py" C-m
 else
+    echo "Not extracting bags"
     tmux kill-window -t $SESSIONNAME:ROS-Bags
     export NUM_LIVES=$(($NUM_LIVES+1))
     python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py

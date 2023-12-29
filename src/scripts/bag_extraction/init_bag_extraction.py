@@ -25,6 +25,16 @@ for topic in list(topics_and_num_msgs):
     if topic not in files:
         topics_and_num_msgs.pop(topic)
 
+# find the mininum number of topics and use that for every other topic
+min_num_msgs = 0
+if len(topics_and_num_msgs) > 0:
+    min_num_msgs = min(topics_and_num_msgs.values())
+
+#replace every value in topics_and_num_msgs with min_num_msgs
+if min_num_msgs != 0:
+    for key in topics_and_num_msgs:
+        topics_and_num_msgs[key] = min_num_msgs
+
 #replace every filename in files with file:nummsgs
 
 for i in range(len(files)):
@@ -34,6 +44,12 @@ num_files = len(files)
 
 #make it one string spearated by spaces
 files = ' '.join(files)
+
+print("sending the following topics: " + files)
+
+#if files is empty, send 'skip'
+if files == '':
+    files = 'skip'
 
 #send all the file names via socket at localhost, 1234
 

@@ -7,7 +7,7 @@ CURR_LIFE=$(ls -l $UELAUNCHER_HOME/bags/$SIM_START_DATE/ | grep -c ^d)
 
 if [ $CURR_LIFE -ge $simulation_num_lives ]; then
     echo "Simulation has ended"
-    tmux kill-session -t SIM
+    tmux kill-session -t $SESSIONNAME
 else
     echo "Simulation is restarting"
     tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py unreal.MindfulLib.start_life()'" C-m
