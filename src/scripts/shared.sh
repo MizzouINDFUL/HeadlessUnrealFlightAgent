@@ -80,6 +80,7 @@ function bind_script_to_event {
    #switch focus back to the first pane
    tmux select-pane -t $SESSIONNAME:Orchestrator.0
    tmux resize-pane -t $SESSIONNAME:Orchestrator.0 -x 30
+   tmux select-layout -t $SESSIONNAME:Orchestrator even-horizontal
 }
 
  function get_num_lives_lived {

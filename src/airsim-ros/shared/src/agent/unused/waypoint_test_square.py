@@ -1,6 +1,7 @@
 import numpy as np
 import airsim
 import time
+import sys
 
 class WaypointController():
 
@@ -12,9 +13,27 @@ class WaypointController():
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
 
-        #set weather to 90% rain
+        # set weather to 90% rain
         self.client.simEnableWeather(True)
-        self.client.simSetWeatherParameter(airsim.WeatherParameter.Rain, 0.9)
+        self.client.simSetWeatherParameter(airsim.WeatherParameter.Rain, 1.0)
+
+        time_morning = "2018-04-12 08:30:00"
+        time_day = "2018-04-12 15:30:00"
+        time_evening = "2018-04-12 22:30:00"
+
+        target_time = time_morning
+
+        if len(sys.argv) > 1:
+            arg = int(sys.argv[1])
+            print(f"Life number {arg}")
+            if arg == 1:
+                target_time = time_morning
+            elif arg == 2:
+                target_time = time_day
+            elif arg == 3:
+                target_time = time_evening
+
+        self.client.simSetTimeOfDay(True, start_datetime=target_time, is_start_datetime_dst=False, celestial_clock_speed=1, update_interval_secs=60, move_sun=True)
 
         self.client.takeoffAsync().join()
 

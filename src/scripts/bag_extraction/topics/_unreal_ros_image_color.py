@@ -39,7 +39,7 @@ class ImageExtractor():
         #save the image. maming foramt should be 00000001.png, 00000002.png, etc
         pngname = str(self.image_count) + ".png"
 
-        for i in range(8 - len(pngname)):
+        for i in range(11 - len(pngname)):
             pngname = "0" + pngname
 
         cv2.imwrite(os.path.join(self.rgb_path, pngname), cv_image)

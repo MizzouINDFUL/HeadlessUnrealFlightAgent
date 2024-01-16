@@ -32,12 +32,18 @@ if [ $simulation_extract_on_end == true ]; then
         "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py; \
         tmux kill-window -t $SESSIONNAME:ROS-Bags; \
         docker kill $SESSIONNAME-yolo; \
-        docker run -it --rm --gpus all --name $SESSIONNAME-yolo -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/$(($NUM_LIVES+1)):/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py; \
+        docker run -it --rm --gpus all --name $SESSIONNAME-yolo -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/$(($CURRLIFE+1)):/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py; \
         export NUM_LIVES=$(($NUM_LIVES+1)); \
         python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py; \
         tmux select-window -t $SESSIONNAME:Orchestrator; \
         tmux kill-window -t $SESSIONNAME:Bags-Extract; \
         " C-m
+
+    #ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p rgb.mp4; \
+    # cd ../predictions; \
+    # ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p predictions.mp4; \
+    # cd ../gt_vs_decl; \
+    # ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p gt_vs_decl.mp4; \
 
     #$UELAUNCHER_HOME/bags/$SIM_START_DATE/:/session 
 

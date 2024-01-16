@@ -75,15 +75,16 @@ while True:
 
         filename = filename.replace(':', ' ')
 
-        #focus of $SESSIONNAME:Bafs-Extract tmux window
+        # focus of $SESSIONNAME:Bafs-Extract tmux window
         os.system('tmux select-window -t $SESSIONNAME:Bags-Extract')
         os.system('tmux split-window -h')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it $SESSIONNAME-ros /bin/bash" Enter')
+        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it $SESSIONNAME-ros /bin/bash" Enter')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
+        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
         time.sleep(0.1)
-        os.system ('tmux send-keys -t $SESSIONNAME:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(filename))
+        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(filename))
         os.system('tmux select-pane -t $SESSIONNAME:Bags-Extract.0')
         os.system('tmux resize-pane -t $SESSIONNAME:Bags-Extract.0 -x 30')
+        os.system('tmux select-layout -t $SESSIONNAME:Bags-Extract even-horizontal')
         time.sleep(1)

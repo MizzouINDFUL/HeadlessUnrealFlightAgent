@@ -14,6 +14,9 @@ elif [[ $1 == "--help" ]]; then
     exit 0
 fi
 
+#create a link folder called agent that leads to src/airsim-ros/shared/src/agent folder
+ln -s $THISFOLDER/src/airsim-ros/shared/src/agent $THISFOLDER/agent 
+
 # Create a new session and detach from it
 tmux new-session -d -s unreal-setup
 

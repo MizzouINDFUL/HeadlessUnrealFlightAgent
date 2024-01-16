@@ -6,15 +6,15 @@ session:
 unreal:
 	separate_session: false
 	start_game: true
-	use_docker: true
+	use_docker: false
 	headless: false
 	docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
 	engine_path: "/home/mindful/EpicGames/UE5.1"
 	project_path: "/home/mindful/Documents/UnrealProjects/Downtown"
-	actors_to_tag: ""
+	actors_to_tag: "ASplineCar_1:car"
 
 simulation:
 	num_lives: 3
 	time: 80
-	tags_to_track: ""
+	tags_to_track: "car"
 	extract_on_end: true

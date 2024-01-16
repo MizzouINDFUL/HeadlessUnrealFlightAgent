@@ -2,6 +2,17 @@ THISFOLDER=$(dirname $(readlink -f $0))
 source $THISFOLDER/src/scripts/shared.sh
 eval $(parse_yaml $HOME_DIR/config.yml)
 
+#if $THISFOLDER/agent doesnt exist, users havent ran setup.sh first
+if [ ! -d "$THISFOLDER/agent" ]; then
+    echo "Please run setup.sh first."
+    exit 1
+fi
+
+#if tmp folder doesnt exist, create it
+if [ ! -d "$HOME_DIR/tmp" ]; then
+    mkdir $HOME_DIR/tmp
+fi
+
 #Handling multiple sessions
 
 all_sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
@@ -51,7 +62,7 @@ tmux new-window -t $SESSIONNAME:2 -n Orchestrator
 tmux new-window -t $SESSIONNAME:3 -n ROS
 
 if [ $unreal_separate_session == false ]; then
-    tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "cat >> $HOME_DIR/src/logs/Unreal.log"
+    tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
     tmux send-keys -t $SESSIONNAME:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
     bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
 else
@@ -59,7 +70,7 @@ else
     if [ $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep -c "^$GAME_PROJECT_NAME-$SESSIONINDEX") -gt 0 ]; then
     echo "A runnning instance of Unreal Engine is found. Connecting to that..."
         sleep 1
-        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "cat >> $UELAUNCHER_HOME/src/logs/Unreal.log"
+        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
         $UELAUNCHER_HOME/src/scripts/unreal/start_tellunreal.sh
         sleep 2
         tmux send-keys -t $SESSIONNAME:tellunreal "tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine \"cat >> $UELAUNCHER_HOME/src/logs/Unreal.log\"" C-m
@@ -68,7 +79,7 @@ else
     else
         #if the tmux session for the game project does not exist, create it
         tmux new-session -d -s $GAME_PROJECT_NAME-$SESSIONINDEX -n UnrealEngine
-        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "cat >> $HOME_DIR/src/logs/Unreal.log"
+        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
         tmux send-keys -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
         bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
     fi
@@ -81,7 +92,7 @@ tmux send-keys -t $SESSIONNAME:ROS "docker kill $SESSIONNAME-ros; docker run -it
 bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/init_viewport_capture.sh
 
 if [ $unreal_start_game == true ]; then
-    bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_game.sh
+    bind_script_to_event "VIEWPORT CAPTURE READY" $HOME_DIR/src/scripts/unreal/start_game.sh
 fi
 
 #When "Bringing up level for play took" appears in the logs, launch unreal-launcher-airsim-ros docker

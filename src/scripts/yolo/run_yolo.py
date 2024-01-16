@@ -19,18 +19,15 @@ if not os.listdir(rgb_folder):
 with open('/session/gt/ground_truth.json') as f:
     gt_data = json.load(f)
 
-# Create the output directories if they don't exist, with full permissions
 os.makedirs('/session/rgb_ground_truth', exist_ok=True)
 os.makedirs('/session/predictions', exist_ok=True)
 os.makedirs('/session/gt_vs_decl', exist_ok=True)
 
 # Initialize the dictionary to store the predictions
 predictions = {
-    "collection": "MyCollection",
+    "declJsonVersion": "0.0.1",
+    "source": "MyAlgorithm",
     "fileUID": "example",
-    "startTime": "2022-1-5T13:21:05.431000",
-    "stopTime": "2022-1-5T13:22:18.725000",
-    "nFrames": 0,
     "frameDeclarations": {}
 }
 
@@ -62,8 +59,20 @@ for filename in files:
         # Predict on the image
         results = model(img)
 
-        # Get the frame number from the filename
-        frame_num = 'f' + os.path.basename(filename).split('.')[0]
+        # Get the frame number from the filename. file are named 0000000.png, 0000001.png, etc.
+        frame_num = int(os.path.splitext(os.path.basename(filename))[0])
+
+        #remove all leading zeros
+        frame_num = str(frame_num).lstrip('0')
+
+        if frame_num == '':
+            frame_num = '0'
+        # else:
+        #     #choose a previous frame - this is just for an experiment
+        #     #TODO: remove this
+        #     frame_num = str(int(frame_num) - 1)
+        
+        frame_num = 'f' + frame_num
 
         # Check if there are annotations for this frame
         if frame_num in gt_data['frameAnnotations']:
@@ -73,7 +82,10 @@ for filename in files:
                 bbox = annotation['shape']['data']
 
                 # Draw the bounding box on the image
+                print('drawing bbox', bbox)
                 img_gt_decl = draw_xywh_on_rgb(img_gt_decl, [bbox], [annotation['class']], color=(0, 255, 0))
+        else:
+            print('no annotations for frame', frame_num)
 
         # Save the annotated image to the output directory
         cv2.imwrite(os.path.join('/session/rgb_ground_truth', os.path.basename(filename)), img_gt_decl)
@@ -93,6 +105,13 @@ for filename in files:
             classes = [result.names[i] for i in classes]
 
             img_decl = img.copy()
+
+            #move the boxes by 1/2 width and height towards the upper left corner
+            for box in bboxes:
+                box[0] -= box[2]/2
+                box[1] -= box[3]/2
+            
+            # Draw the bounding boxes on the image
             img_decl = draw_xywh_on_rgb(img_decl, bboxes, classes, color=(255, 0, 0))
 
             img_gt_decl = draw_xywh_on_rgb(img_gt_decl, bboxes, classes, color=(255, 0, 0))
@@ -115,9 +134,6 @@ for filename in files:
                     } for box, cls, conf in zip(bboxes, classes, confidences)
                 ]
             }
-
-        # Increment the frame count
-        predictions["nFrames"] += 1
 
         # Save the annotated image to the output directory
         cv2.imwrite(os.path.join('/session/gt_vs_decl', os.path.basename(filename)), img_gt_decl)

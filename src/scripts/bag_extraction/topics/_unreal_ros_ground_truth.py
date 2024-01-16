@@ -37,11 +37,11 @@ class Extractor():
     def gt_callback(self, data):
         print("received ground truth message")
         print(data.data)
+
         frame_annotation = {
             "frameAnnotations": {
                 "f0": {
-                    "boundingBoxes": [],
-                    "timestamp": "2022-1-5T13:21:05.431000"
+                    "annotations" : []
                 }
             }
         }
@@ -49,20 +49,18 @@ class Extractor():
             print("empty ground truth message")
             return
 
-        frame_annotation["frameAnnotations"]["f" + str(self.message_count)] = frame_annotation["frameAnnotations"].pop(list(frame_annotation["frameAnnotations"].keys())[0])
+        new_frame = json.loads(data.data)['frameAnnotations'][list(json.loads(data.data)['frameAnnotations'].keys())[0]]
+        frame_annotation["frameAnnotations"]["f" + str(self.message_count)] = new_frame
+        self.ground_truth["frameAnnotations"].update(frame_annotation["frameAnnotations"])
         self.message_count += 1
 
-        print("frame annotation: ")
-        print(frame_annotation)
-
-        frame_name = list(frame_annotation["frameAnnotations"].keys())[0]
-        self.ground_truth["frameAnnotations"].update(frame_annotation["frameAnnotations"])
         self.ground_truth["nFrames"] += 1
         if self.ground_truth["nFrames"] == self.num_messages:
             print("done extracting ground truth")
+
             output_path = os.path.join(self.gt_path, "ground_truth.json")
             with open(output_path, "w") as f:
-                json.dump(self.ground_truth, f)
+                json.dump(self.ground_truth, f, ensure_ascii=False)
 
             #send done message. just send "1" to indicate it's done
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

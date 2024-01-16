@@ -2,6 +2,10 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
 eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
+#write "QUIT_EDITOR" to $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/command.txt and wait 0.5 seconds
+echo "QUIT_EDITOR" > $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/command.txt
+sleep 0.5
+
 docker kill $SESSIONNAME-ros; docker kill $SESSIONNAME-airsim-ros; docker kill $SESSIONNAME-yolo;
 
 if [ $unreal_use_docker == true ]; then
@@ -23,4 +27,12 @@ fi
 #check if the $UELAUNCHER_HOME/bags/$SIM_START_DATE folder is empty. If it is, delete it
 if [ ! "$(ls -A $UELAUNCHER_HOME/bags/$SIM_START_DATE)" ]; then
     rm -r $UELAUNCHER_HOME/bags/$SIM_START_DATE
+    
+    if [ -f $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log ]; then
+        rm $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log
+    fi
+else
+    if [ -f $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log ]; then
+        mv $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log $UELAUNCHER_HOME/bags/$SIM_START_DATE/Unreal.log
+    fi
 fi
