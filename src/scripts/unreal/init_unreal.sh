@@ -54,7 +54,7 @@ fi
 
 #launch the project
 if [ $unreal_headless == true ]; then
-    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -RenderOffscreen
+    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" -RenderOffscreen UNATTENDED
 else
-    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject"
+    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" UNATTENDED
 fi

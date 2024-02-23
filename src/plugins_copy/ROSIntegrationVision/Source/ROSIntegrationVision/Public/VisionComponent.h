@@ -58,10 +58,12 @@ public:
     UTopic * ImagePublisher;
   UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
     UTopic * TFPublisher;
-   UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
+  UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
     UTopic * ObjectsPublisher;
-    UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
+  UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
     UTopic * GroundTruthPublisher;
+  UPROPERTY(Transient, EditAnywhere, Category = "Vision Component")
+    UTopic * MsgCountPublisher;
 
   UFUNCTION()
   FORCEINLINE void SetTagsToTrack(const TArray<FName> &Tags) { TagsToTrack = Tags; }
@@ -124,6 +126,7 @@ private:
   void ProcessColor();
   void ProcessDepth();
   void ProcessObject();
+  void ProcessGT();
 
   // in must hold Width*Height*2(float) Bytes
   void convertDepth(const uint16_t *in, __m128 *out) const;

@@ -1,6 +1,7 @@
 import socket
 import os
 import time
+import sys
 
 #this should receive socket emssages at localhost, port 1234
 #the messages are python file names that will need to be executed in a new tmux pane from inside a running 'ros' container in the following folder: /scripts/bag_extraction/topics/
@@ -13,6 +14,10 @@ num_done = 0
 rosbag_done = False
 topics_extracted = False
 skip = False
+
+optional_arg = None
+if len(sys.argv) > 1:
+    optional_arg = sys.argv[1]
 
 while True:
 
@@ -74,6 +79,10 @@ while True:
         #replace : with a space
 
         filename = filename.replace(':', ' ')
+
+        #if an optional argument is passed, append that to the filename
+        if optional_arg is not None:
+            filename = filename + ' ' + optional_arg
 
         # focus of $SESSIONNAME:Bafs-Extract tmux window
         os.system('tmux select-window -t $SESSIONNAME:Bags-Extract')

@@ -47,6 +47,11 @@ mkdir ./bags/$SIM_START_DATE
 echo "" > $HOME_DIR/src/logs/Unreal.log
 echo "" > $HOME_DIR/src/plugins_link/CommandLineExternal/command.txt
 
+#go to project directory and delete Saved/Crashes and Saved/Autosaves. If the game wasn't closed properly before,
+# this next run will propmt us with a "Restore Packages" window that is not interactive when headless and so the game will not start
+rm -r $unreal_project_path/Saved/Crashes > /dev/null 2>&1
+rm -r $unreal_project_path/Saved/Autosaves > /dev/null 2>&1
+
 #get the name of the game project from the config file parameter $unreal_project_path. Get the name of the last folder in that path
 export GAME_PROJECT_NAME=$(echo $unreal_project_path | rev | cut -d'/' -f1 | rev)
 echo "GAME_PROJECT_NAME: $GAME_PROJECT_NAME"

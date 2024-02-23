@@ -2,8 +2,33 @@ source $UELAUNCHER_HOME/src/scripts/shared.sh
 eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 CURRLIFE=$(ls -l $UELAUNCHER_HOME/bags/$SIM_START_DATE/ | grep -c ^d)
-echo "Ending life $CURRLIFE in $simulation_time seconds"
-sleep $simulation_time
+
+echo "stop_game script entrypint"
+
+if [ $simulation_target_is_time == true ]; then
+    echo "Ending life $CURRLIFE in $simulation_target seconds"
+    sleep $simulation_target
+else
+    echo "Ending life $CURRLIFE after $simulation_target messages"
+    while :
+    do
+        msg_count=$(docker exec -it $SESSIONNAME-ros /bin/bash -c "source /opt/ros/noetic/setup.bash; rostopic echo -n 1 /unreal_ros/message_count")
+        echo "looking at $msg_count messages in /unreal_ros/"
+        if [ -n "$msg_count" ]; then
+            msg_count=$(echo $msg_count | tr -d '\n')
+            msg_count=$(echo $msg_count | sed 's/[^0-9]//g')
+            echo "msg_count is $msg_count"
+            if [ $msg_count -ge $simulation_target ]; then
+                break
+            fi
+        else
+            echo "msg_count is empty"
+        fi
+        sleep 5
+    done
+fi
+
+echo "Ending life $CURRLIFE"
 
 #send Ctrl+C to ROS-Bags in SIM session
 tmux send-keys -t $SESSIONNAME:ROS-Bags C-c
@@ -39,16 +64,13 @@ if [ $simulation_extract_on_end == true ]; then
         tmux kill-window -t $SESSIONNAME:Bags-Extract; \
         " C-m
 
-    #ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p rgb.mp4; \
-    # cd ../predictions; \
-    # ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p predictions.mp4; \
-    # cd ../gt_vs_decl; \
-    # ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p gt_vs_decl.mp4; \
-
-    #$UELAUNCHER_HOME/bags/$SIM_START_DATE/:/session 
+    init_extraction_argument=""
+    if [ $simulation_target_is_time == false ]; then
+        init_extraction_argument="$simulation_target"
+    fi
 
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags
-    tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py" C-m
+    tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument" C-m
 else
     echo "Not extracting bags"
     tmux kill-window -t $SESSIONNAME:ROS-Bags

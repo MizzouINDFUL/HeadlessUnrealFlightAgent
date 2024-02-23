@@ -1,20 +1,23 @@
 --- # Config file for Unreal Launcher
 session:
-	basename: "SIM"
-	max: 1
-	
+	basename: "SIM" #base name for a tmux session
+	max: 1 #max number of tmux sessions with that basename - experimental stuff for parallel runs
+
 unreal:
-	separate_session: false
-	start_game: true
-	use_docker: false
-	headless: false
+	separate_session: false #will open a separate tmux session for the editor instead of using the same one as the launcher. useful for debugging
+	start_game: true #start game after launching the editor automatically
+	use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
+	headless: true #run the editor in headless mode - otherwise will run normally, with GUI (which will not work with docker)
 	docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
 	engine_path: "/home/mindful/EpicGames/UE5.1"
 	project_path: "/home/mindful/Documents/UnrealProjects/Downtown"
 	actors_to_tag: "ASplineCar_1:car"
 
 simulation:
-	num_lives: 3
+	num_lives: 100
+	target_is_time: false #if false, we count frames instead of seconds
 	time: 80
+	target: 80
+	record_delay: 20 #delay before starting to record
 	tags_to_track: "car"
 	extract_on_end: true

@@ -85,5 +85,9 @@ void AASplineCar::Tick(float DeltaTime)
         // Set the new location on the spline
         FVector NewLocation = CarPath->GetLocationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
         CarMesh->SetWorldLocation(NewLocation);
+
+        //Same with rotation
+        FRotator NewRotation = CarPath->GetRotationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
+        CarMesh->SetWorldRotation(NewRotation);
     }
 }

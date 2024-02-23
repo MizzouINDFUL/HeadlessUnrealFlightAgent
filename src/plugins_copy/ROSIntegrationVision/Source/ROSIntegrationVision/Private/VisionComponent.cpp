@@ -35,11 +35,11 @@ class ROSINTEGRATIONVISION_API UVisionComponent::PrivateData
 public:
 	TSharedPtr<PacketBuffer> Buffer;
 	// TCPServer Server;
-	std::mutex WaitColor, WaitDepth, WaitObject, WaitDone;
-	std::condition_variable CVColor, CVDepth, CVObject, CVDone;
-	std::thread ThreadColor, ThreadDepth, ThreadObject;
-	bool DoColor, DoDepth, DoObject;
-	bool DoneColor, DoneObject;
+	std::mutex WaitColor, WaitDepth, WaitObject, WaitGT, WaitDone;
+	std::condition_variable CVColor, CVDepth, CVObject, CVGT, CVDone;
+	std::thread ThreadColor, ThreadDepth, ThreadObject, ThreadGT;
+	bool DoColor, DoDepth, DoObject, DoGT;
+	bool DoneColor, DoneObject, DoneGT;
 };
 
 UVisionComponent::UVisionComponent() :
@@ -58,6 +58,8 @@ ColorsUsed(0)
     PrimaryComponentTick.bStartWithTickEnabled = true;
 	FrameNumber = 0;
 	DisableTFPublishing = true;
+
+	SetTickGroup(TG_PostPhysics);
 
     auto owner = GetOwner();
     if (owner)
@@ -104,6 +106,7 @@ ColorsUsed(0)
     // TFPublisher = NewObject<UTopic>(UTopic::StaticClass());
 	ObjectsPublisher = NewObject<UTopic>(UTopic::StaticClass());
 	GroundTruthPublisher = NewObject<UTopic>(UTopic::StaticClass());
+	MsgCountPublisher = NewObject<UTopic>(UTopic::StaticClass());
 }
 
 UVisionComponent::~UVisionComponent()
@@ -169,14 +172,17 @@ void UVisionComponent::BeginPlay()
 	Priv->DoColor = false;
 	Priv->DoObject = false;
 	Priv->DoDepth = false;
+	Priv->DoGT = false;
 
 	Priv->DoneColor = false;
 	Priv->DoneObject = false;
+	Priv->DoneGT = false;
 
 	// Starting threads to process image data
 	Priv->ThreadColor = std::thread(&UVisionComponent::ProcessColor, this);
 	Priv->ThreadDepth = std::thread(&UVisionComponent::ProcessDepth, this);
 	Priv->ThreadObject = std::thread(&UVisionComponent::ProcessObject, this);
+	Priv->ThreadGT = std::thread(&UVisionComponent::ProcessGT, this);
 
 	// Establish ROS communication
 	UROSIntegrationGameInstance* rosinst = Cast<UROSIntegrationGameInstance>(GetOwner()->GetGameInstance());
@@ -205,6 +211,11 @@ void UVisionComponent::BeginPlay()
 						 TEXT("/unreal_ros/image_objects"),
 						 TEXT("sensor_msgs/Image"));
 		ObjectsPublisher->Advertise();
+
+		MsgCountPublisher->Init(rosinst->ROSIntegrationCore,
+						 TEXT("/unreal_ros/message_count"),
+						 TEXT("std_msgs/String"));
+		MsgCountPublisher->Advertise();
 
 		GroundTruthPublisher->Init(rosinst->ROSIntegrationCore,
 						 TEXT("/unreal_ros/ground_truth"),
@@ -316,6 +327,12 @@ void UVisionComponent::TickComponent(float DeltaTime,
 	// Start writing to buffer
 	Priv->Buffer->StartWriting(ObjectToColor, ObjectColors);
 
+	Priv->WaitGT.lock();
+
+	Priv->WaitGT.unlock();
+	Priv->DoGT = true;
+	Priv->CVGT.notify_one();
+
 	// Read color image and notify processing thread
 	Priv->WaitColor.lock();
 
@@ -323,14 +340,6 @@ void UVisionComponent::TickComponent(float DeltaTime,
 		ReadImage(CustomColorRenderTarget, ImageColor);
 	else
 		ReadImage(Color->TextureTarget, ImageColor);
-	
-	Priv->WaitColor.unlock();
-	Priv->DoColor = true;
-	Priv->CVColor.notify_one();
-
-	// Read object image and notify processing thread
-	Priv->WaitObject.lock();
-	ReadImage(Object->TextureTarget, ImageObject);
 
 	FString GroundTruthData;
 
@@ -377,6 +386,7 @@ void UVisionComponent::TickComponent(float DeltaTime,
 				Object->CaptureScene();
 
 				//pretty bad and cheap hack to fix the offset by one frame in the ground truth data
+				// FBox2D Bounds = GetActorBoxFromRT(OriginalSurfaceData, Object->TextureTarget);
 				FBox2D Bounds = FBox2D();
 
 				if (FrameNumber != 0)
@@ -407,6 +417,17 @@ void UVisionComponent::TickComponent(float DeltaTime,
 	}
 
 	FrameNumber++;
+
+	// Object->SetWorldLocationAndRotation(Color->GetComponentLocation(), Color->GetComponentRotation());
+	
+	Priv->WaitColor.unlock();
+	Priv->DoColor = true;
+	Priv->CVColor.notify_one();
+
+	// Read object image and notify processing thread
+	Priv->WaitObject.lock();
+
+	ReadImage(Object->TextureTarget, ImageObject);
 
 	Priv->WaitObject.unlock();
 	Priv->DoObject = true;
@@ -453,8 +474,12 @@ void UVisionComponent::TickComponent(float DeltaTime,
 
 	TSharedPtr<ROSMessages::sensor_msgs::Image> ImageMessage(new ROSMessages::sensor_msgs::Image());
 
+
 	TSharedPtr<ROSMessages::std_msgs::String> GroundTruthMessage(new ROSMessages::std_msgs::String(GroundTruthData));
 	GroundTruthPublisher->Publish(GroundTruthMessage);
+
+	TSharedPtr<ROSMessages::std_msgs::String> MsgCountMessage(new ROSMessages::std_msgs::String(FString::FromInt(FrameNumber - 1)));
+	MsgCountPublisher->Publish(MsgCountMessage);
 
 	ObjectsMessage->header.seq = 0;
 	ObjectsMessage->header.time = time;
@@ -487,145 +512,6 @@ void UVisionComponent::TickComponent(float DeltaTime,
 	DepthPublisher->Publish(DepthMessage);
 
 	Priv->Buffer->DoneReading();
-
-// 	double x = Priv->Buffer->HeaderRead->Translation.X;
-// 	double y = Priv->Buffer->HeaderRead->Translation.Y;
-// 	double z = Priv->Buffer->HeaderRead->Translation.Z;
-// 	double rx = Priv->Buffer->HeaderRead->Rotation.X;
-// 	double ry = Priv->Buffer->HeaderRead->Rotation.Y;
-// 	double rz = Priv->Buffer->HeaderRead->Rotation.Z;
-// 	double rw = Priv->Buffer->HeaderRead->Rotation.W;
-
-// 	if (!DisableTFPublishing) {
-//     // Start advertising TF only if it has yet to advertise.
-//     if (!TFPublisher->IsAdvertising())
-//     {
-//       TFPublisher->Advertise();
-//     }
-// 		// TSharedPtr<ROSMessages::tf2_msgs::TFMessage> TFImageFrame(new ROSMessages::tf2_msgs::TFMessage());
-// 		// ROSMessages::geometry_msgs::TransformStamped TransformImage;
-// 		// TransformImage.header.seq = 0;
-// 		// TransformImage.header.time = time;
-// 		// TransformImage.header.frame_id = ParentLink;
-// 		// TransformImage.child_frame_id = ImageFrame;
-// 		// TransformImage.transform.translation.x = x;
-// 		// TransformImage.transform.translation.y = y;
-// 		// TransformImage.transform.translation.z = z;
-// 		// TransformImage.transform.rotation.x = rx;
-// 		// TransformImage.transform.rotation.y = ry;
-// 		// TransformImage.transform.rotation.z = rz;
-// 		// TransformImage.transform.rotation.w = rw;
-
-// 		// TFImageFrame->transforms.Add(TransformImage);
-
-// 		// TFPublisher->Publish(TFImageFrame);
-
-// 		// // Publish optical frame
-// 		// FRotator CameraLinkRotator(0.0, -90.0, 90.0);
-// 		// FQuat CameraLinkQuaternion(CameraLinkRotator);
-
-// 		// TSharedPtr<ROSMessages::tf2_msgs::TFMessage> TFOpticalFrame(new ROSMessages::tf2_msgs::TFMessage());
-// 		// ROSMessages::geometry_msgs::TransformStamped TransformOptical;
-// 		// TransformOptical.header.seq = 0;
-// 		// TransformOptical.header.time = time;
-// 		// TransformOptical.header.frame_id = ImageFrame;
-// 		// TransformOptical.child_frame_id = ImageOpticalFrame;
-// 		// TransformOptical.transform.translation.x = 0;
-// 		// TransformOptical.transform.translation.y = 0;
-// 		// TransformOptical.transform.translation.z = 0;
-// 		// TransformOptical.transform.rotation.x = CameraLinkQuaternion.X;
-// 		// TransformOptical.transform.rotation.y = CameraLinkQuaternion.Y;
-// 		// TransformOptical.transform.rotation.z = CameraLinkQuaternion.Z;
-// 		// TransformOptical.transform.rotation.w = CameraLinkQuaternion.W;
-
-// 		// TFOpticalFrame->transforms.Add(TransformOptical);
-
-// 		// TFPublisher->Publish(TFOpticalFrame);
-// 	}
-//   // Stop advertising if TF has been disabled and is already advertising.
-//   else if (TFPublisher->IsAdvertising()) {
-//     TFPublisher->Unadvertise();
-//   }
-
-// 	// Construct and publish CameraInfo
-
-// 	// const float FOVX = Height > Width ? FieldOfView * Width / Height : FieldOfView;
-// 	// const float FOVY = Width > Height ? FieldOfView * Height / Width : FieldOfView;
-// 	// double halfFOVX = FOVX * PI / 360.0; // was M_PI on gcc
-// 	// double halfFOVY = FOVY * PI / 360.0; // was M_PI on gcc
-// 	// const double cX = Width / 2.0;
-// 	// const double cY = Height / 2.0;
-
-// 	// const double K0 = cX / std::tan(halfFOVX);
-// 	// const double K2 = cX;
-// 	// const double K4 = K0;
-// 	// const double K5 = cY;
-// 	// const double K8 = 1;
-
-// 	// const double P0 = K0;
-// 	// const double P2 = K2;
-// 	// const double P5 = K4;
-// 	// const double P6 = K5;
-// 	// const double P10 = 1;
-
-// 	TSharedPtr<ROSMessages::sensor_msgs::CameraInfo> CamInfo(new ROSMessages::sensor_msgs::CameraInfo());
-// 	// CamInfo->header.seq = 0;
-// 	// CamInfo->header.time = time;
-// 	// //CamInfo->header.frame_id =
-// 	// CamInfo->height = Height;
-// 	// CamInfo->width = Width;
-// 	// CamInfo->distortion_model = TEXT("plumb_bob");
-// 	// CamInfo->D[0] = 0;
-// 	// CamInfo->D[1] = 0;
-// 	// CamInfo->D[2] = 0;
-// 	// CamInfo->D[3] = 0;
-// 	// CamInfo->D[4] = 0;
-
-// 	// CamInfo->K[0] = K0;
-// 	// CamInfo->K[1] = 0;
-// 	// CamInfo->K[2] = K2;
-// 	// CamInfo->K[3] = 0;
-// 	// CamInfo->K[4] = K4;
-// 	// CamInfo->K[5] = K5;
-// 	// CamInfo->K[6] = 0;
-// 	// CamInfo->K[7] = 0;
-// 	// CamInfo->K[8] = K8;
-
-// 	// CamInfo->R[0] = 1;
-// 	// CamInfo->R[1] = 0;
-// 	// CamInfo->R[2] = 0;
-// 	// CamInfo->R[3] = 0;
-// 	// CamInfo->R[4] = 1;
-// 	// CamInfo->R[5] = 0;
-// 	// CamInfo->R[6] = 0;
-// 	// CamInfo->R[7] = 0;
-// 	// CamInfo->R[8] = 1;
-
-// 	// CamInfo->P[0] = P0;
-// 	// CamInfo->P[1] = 0;
-// 	// CamInfo->P[2] = P2;
-// 	// CamInfo->P[3] = 0;
-// 	// CamInfo->P[4] = 0;
-// 	// CamInfo->P[5] = P5;
-// 	// CamInfo->P[6] = P6;
-// 	// CamInfo->P[7] = 0;
-// 	// CamInfo->P[8] = 0;
-// 	// CamInfo->P[9] = 0;
-// 	// CamInfo->P[10] = P10;
-// 	// CamInfo->P[11] = 0;
-
-// 	// CamInfo->binning_x = 0;
-// 	// CamInfo->binning_y = 0;
-
-// 	// CamInfo->roi.x_offset = 0;
-// 	// CamInfo->roi.y_offset = 0;
-// 	// CamInfo->roi.height = 0;
-// 	// CamInfo->roi.width = 0;
-// 	// CamInfo->roi.do_rectify = false;
-
-// 	// CameraInfoPublisher->Publish(CamInfo);
-
-// 	// Clean up
 }
 
 void UVisionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -637,13 +523,16 @@ void UVisionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Priv->DoColor = true;
     Priv->DoDepth = true;
     Priv->DoObject = true;
+	Priv->DoGT = true;
     Priv->CVColor.notify_one();
     Priv->CVDepth.notify_one();
     Priv->CVObject.notify_one();
+	Priv->CVGT.notify_one();
 
     Priv->ThreadColor.join();
     Priv->ThreadDepth.join();
     Priv->ThreadObject.join();
+	Priv->ThreadGT.join();
 }
 
 void UVisionComponent::ShowFlagsBasicSetting(FEngineShowFlags &ShowFlags) const
@@ -892,6 +781,19 @@ void UVisionComponent::ProcessColor()
 		ToColorImage(ImageColor, Priv->Buffer->Color);
 
 		Priv->DoneColor = true;
+		Priv->CVDone.notify_one();
+	}
+}
+
+void UVisionComponent::ProcessGT()
+{
+	while (true)
+	{
+		std::unique_lock<std::mutex> WaitLock(Priv->WaitGT);
+		Priv->CVGT.wait(WaitLock, [this] {return Priv->DoGT; });
+		Priv->DoGT = false;
+		if (!this->Running) break;
+		Priv->DoneGT = true;
 		Priv->CVDone.notify_one();
 	}
 }

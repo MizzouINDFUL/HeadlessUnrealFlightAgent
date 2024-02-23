@@ -3,6 +3,7 @@
 
 #include "MindfulLib.h"
 #include "Kismet/GameplayStatics.h"
+#include "RainFollow.h"
 
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Editor/UnrealEdEngine.h"
@@ -12,7 +13,6 @@
 #include "Editor/UnrealEd/Public/Editor.h"
 
 #include "MindfulNotifier.h"
-
 
 void UMindfulLib::AddNotifier(UObject* WorldContext)
 {
@@ -28,6 +28,28 @@ void UMindfulLib::AddNotifier(UObject* WorldContext)
     UWorld* World = WorldContext->GetWorld(); //GEngine->GetWorldFromContextObject(WorldContext);
     FActorSpawnParameters SpawnParams;
     World->SpawnActor<AMindfulNotifier>(SpawnParams);
+}
+
+void UMindfulLib::AddRainFollow(UObject* WorldContext, float Intensity)
+{
+    //Check if there is already an instance of the actor
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(WorldContext, ARainFollow::StaticClass(), FoundActors);
+    if (FoundActors.Num() > 0)
+    {
+        ARainFollow* RainFollow = Cast<ARainFollow>(FoundActors[0]);
+        if (RainFollow)
+        {
+            RainFollow->SetRainIntensity(Intensity);
+        }
+        return;
+    }
+
+    //Spawn the ARainFollow actor
+    UWorld* World = WorldContext->GetWorld(); //GEngine->GetWorldFromContextObject(WorldContext);
+    FActorSpawnParameters SpawnParams;
+    ARainFollow* Rain = World->SpawnActor<ARainFollow>(SpawnParams);
+    Rain->SetRainIntensity(Intensity);
 }
 
 //Stop the Unreal Play In Editor session

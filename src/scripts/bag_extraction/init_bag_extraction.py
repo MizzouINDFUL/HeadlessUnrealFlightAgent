@@ -3,6 +3,12 @@ import time
 import socket
 import os
 import glob
+import sys
+
+#if there is an argument passed, it is how many messages are exepcted in each topic
+num_msgs = -1
+if len(sys.argv) > 1:
+    num_msgs = int(sys.argv[1])
 
 topics = [key for x in yaml.safe_load_all(open('topics.yml')) for key in x]
 topic_names = [x['topic'] for x in topics]
@@ -29,6 +35,9 @@ for topic in list(topics_and_num_msgs):
 min_num_msgs = 0
 if len(topics_and_num_msgs) > 0:
     min_num_msgs = min(topics_and_num_msgs.values())
+
+if num_msgs != -1:
+    min_num_msgs = min(min_num_msgs, num_msgs)
 
 #replace every value in topics_and_num_msgs with min_num_msgs
 if min_num_msgs != 0:

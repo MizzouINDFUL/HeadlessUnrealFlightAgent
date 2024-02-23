@@ -5,7 +5,6 @@
 #include "VisionActor.h"
 #include "Kismet/GameplayStatics.h"
 
-
 void UVisionLib::AddViewportCapture(UObject* WorldContext){
     //find all actors with tag "ViewportCapture". If one exists, dont create a new one
     TArray<AActor*> ViewportCaptureActors;
