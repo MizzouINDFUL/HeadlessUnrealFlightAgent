@@ -14,7 +14,7 @@ unreal:
 	actors_to_tag: "ASplineCar7:car"
 
 simulation:
-	outputSizeX: 2048
+	c: 2048
 	outputSizeY: 1024
 	store_in_bag: true
 	start_airsim: true
