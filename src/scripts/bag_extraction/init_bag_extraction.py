@@ -5,7 +5,7 @@ import os
 import glob
 import sys
 
-#if there is an argument passed, it is how many messages are exepcted in each topic
+#if there is an argument passed, it is how many messages are expected in each topic
 num_msgs = -1
 if len(sys.argv) > 1:
     num_msgs = int(sys.argv[1])
@@ -31,7 +31,7 @@ for topic in list(topics_and_num_msgs):
     if topic not in files:
         topics_and_num_msgs.pop(topic)
 
-# find the mininum number of topics and use that for every other topic
+# find the minimum number of topics and use that for every other topic
 min_num_msgs = 0
 if len(topics_and_num_msgs) > 0:
     min_num_msgs = min(topics_and_num_msgs.values())
@@ -39,19 +39,24 @@ if len(topics_and_num_msgs) > 0:
 if num_msgs != -1:
     min_num_msgs = min(min_num_msgs, num_msgs)
 
+#keep a copy of the original topics_and_num_msgs before replacing every value with min_num_msgs
+actual_topics_and_num_msgs = topics_and_num_msgs.copy()
+
 #replace every value in topics_and_num_msgs with min_num_msgs
 if min_num_msgs != 0:
     for key in topics_and_num_msgs:
         topics_and_num_msgs[key] = min_num_msgs
 
-#replace every filename in files with file:nummsgs
-
+#replace every filename in files with file:min_num_msgs:actual_num_msgs
 for i in range(len(files)):
-    files[i] = files[i] + ':' + str(topics_and_num_msgs[files[i]])
+    file_name = files[i]
+    min_msgs = str(topics_and_num_msgs[file_name])
+    actual_msgs = str(actual_topics_and_num_msgs[file_name])
+    files[i] = f"{file_name}:{min_msgs}:{actual_msgs}"
 
 num_files = len(files)
 
-#make it one string spearated by spaces
+#make it one string separated by spaces
 files = ' '.join(files)
 
 print("sending the following topics: " + files)
@@ -61,7 +66,6 @@ if files == '':
     files = 'skip'
 
 #send all the file names via socket at localhost, 1234
-
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(('localhost', 1234))
 

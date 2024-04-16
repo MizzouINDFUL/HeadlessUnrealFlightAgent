@@ -44,7 +44,8 @@ public class ROSIntegration : ModuleRules
 			{
 				"Core",
 				"Sockets",
-				"Networking"
+				"Networking",
+				"OpenCV", "OpenCVHelper",
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);
@@ -57,7 +58,9 @@ public class ROSIntegration : ModuleRules
 				"Engine",
 				"Sockets",
 				"Networking",
-				"WebSockets"
+				"WebSockets",
+				"Json",
+				"ImageWrapper", "RenderCore"
 				// ... add private dependencies that you statically link with here ...
 			}
 		);

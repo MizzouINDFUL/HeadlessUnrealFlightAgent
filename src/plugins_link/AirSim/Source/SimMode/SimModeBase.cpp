@@ -129,7 +129,7 @@ void ASimModeBase::BeginPlay()
 
     setupClockSpeed();
 
-    setStencilIDs();
+    // setStencilIDs();
 
     record_tick_count = 0;
     setupInputBindings();

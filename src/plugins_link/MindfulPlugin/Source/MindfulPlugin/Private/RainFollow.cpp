@@ -24,8 +24,20 @@ ARainFollow::ARainFollow()
 void ARainFollow::BeginPlay()
 {
     Super::BeginPlay();
-    
-    SetActorLocation(FVector(0.f, 0.f, 10000.f));
+
+    // set actors location at play pawn location
+    auto PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+    if (PlayerPawn)
+    {
+        // Get the player's camera location
+        FVector CameraLocation = PlayerPawn->GetActorLocation();
+        
+        // Calculate the target location with the offset
+        FVector TargetLocation = CameraLocation + FVector(0, 0, 900);
+        
+        // Set the actor's location to the target location
+        SetActorLocation(TargetLocation);
+    }
 }
 
 void ARainFollow::SetRainIntensity(float Intensity)

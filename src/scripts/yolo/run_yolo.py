@@ -104,6 +104,21 @@ for filename in files:
 
             classes = [result.names[i] for i in classes]
 
+            # Find the index of the bounding box with the closest distance to the first bounding box in ground truth
+            if bboxes and len(gt_data['frameAnnotations'][frame_num]['annotations']) > 0:
+                first_gt_bbox = gt_data['frameAnnotations'][frame_num]['annotations'][0]['shape']['data']
+                closest_bbox_index = min(range(len(bboxes)), key=lambda i: abs(bboxes[i][0] - first_gt_bbox[0]) + abs(bboxes[i][1] - first_gt_bbox[1]))
+                # Keep only the closest bounding box, class, and confidence
+                bboxes = [bboxes[closest_bbox_index]]
+                classes = [classes[closest_bbox_index]]
+                confidences = [confidences[closest_bbox_index]]
+            else:
+                print('no predictions for frame', frame_num)
+                bboxes = []
+                classes = []
+                confidences = []
+                continue
+
             img_decl = img.copy()
 
             #move the boxes by 1/2 width and height towards the upper left corner

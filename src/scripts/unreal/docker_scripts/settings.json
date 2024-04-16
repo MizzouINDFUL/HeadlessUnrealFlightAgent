@@ -2,6 +2,7 @@
   "SeeDocsAt": "https://github.com/Microsoft/AirSim/blob/master/docs/settings.md",
   "SettingsVersion": 1.2,
   "SimMode": "Multirotor",
+  "ViewMode": "Fpv",
   "Recording": {
     "RecordOnMove": true,
     "RecordInterval": 0.05,
@@ -40,9 +41,6 @@
     ]
   },
   "SubWindows": [
-    {"WindowID": 0, "CameraName": "0", "ImageType": 3, "VehicleName": "", "Visible": true},
-    {"WindowID": 1, "CameraName": "0", "ImageType": 5, "VehicleName": "", "Visible": true},
-    {"WindowID": 2, "CameraName": "0", "ImageType": 0, "VehicleName": "", "Visible": true}
   ],
   "SegmentationSettings": {
     "InitMethod": "",

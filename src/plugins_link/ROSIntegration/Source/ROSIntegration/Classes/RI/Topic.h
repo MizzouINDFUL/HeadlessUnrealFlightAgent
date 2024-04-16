@@ -7,6 +7,7 @@
 #include <UObject/Object.h>
 #include "Math/Vector.h"
 #include "ROSBaseMsg.h"
+#include "ROSTime.h"
 #include "ROSIntegrationCore.h"
 
 #include "Topic.generated.h"
@@ -31,6 +32,7 @@ enum class EMessageType : uint8
 	Pose = 16,
 	Quaternion = 18,
 	Twist = 19,
+	Image = 20,
 };
 
 UCLASS(Blueprintable)
@@ -121,6 +123,9 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
 	void Init(const FString& TopicName, EMessageType MessageType, int32 QueueSize = 1);
 
+	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
+	void InitImage(const FString& TopicName, int32 QueueSize = 1);
+
 	/**
 	 * Subscribe to the given topic
 	 */
@@ -129,6 +134,17 @@ private:
 
 	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
 	bool PublishStringMessage(const FString& Message);
+
+	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
+	bool PublishImageMessageFromPNG(const FString& FilePath, const int32 id = 0);
+
+	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
+	bool Test_PublishGroundTruthFromPNG(const FString& FilePath, const int32 id = 0);
+
+	UFUNCTION(BlueprintCallable, Category = "ROS|Topic")
+	static bool CheckImagePaths(const TArray<FString>& FilePaths);
+
+	bool BGRAtoBGR(const TArray<uint8>& InData, uint8* OutData, int32 Width, int32 Height);
 
 	// Helper to keep track of self-destruction for async functions
 	TSharedPtr<UTopic, ESPMode::ThreadSafe> _SelfPtr;

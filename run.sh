@@ -102,9 +102,11 @@ fi
 
 #When "Bringing up level for play took" appears in the logs, launch unreal-launcher-airsim-ros docker
 bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/start_airsim_rosbag.sh
+bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/post_start_game.sh
 
-if [ $simulation_time -gt -1 ]; then
-    bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/stop_game.sh true
+if [ $simulation_target -gt -1 ]; then
+    # bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/stop_game.sh true
+    bind_script_to_event "MRQ SIM FINISHED" $HOME_DIR/src/scripts/unreal/mrq_done.sh true
     bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
 fi
 

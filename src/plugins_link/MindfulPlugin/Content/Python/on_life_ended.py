@@ -16,7 +16,9 @@ alpha_invered = 1 - time_of_day_alpha
 command = "py add_simple_sky.py {}".format(time_of_day_alpha)
 command2 = "py set_exposure.py {}".format(alpha_invered)
 
-unreal.SystemLibrary.execute_console_command(None, command)
+#temp
+
+# unreal.SystemLibrary.execute_console_command(None, command)
 
 time.sleep(0.15)
 

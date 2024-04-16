@@ -6,36 +6,44 @@ import socket
 import cv2
 from sensor_msgs.msg import Image
 
+folder_name = None
 
 print("getting ready to extract color imagery from Unreal")
 if (len(sys.argv) < 2):
-    print("usage: python3 _unreal_ros_image_color.py num_messages")
+    print("usage: python3 _unreal_ros_groundt_truth_color.py num_messages")
     exit(1)
 else:
     num_messages = int(sys.argv[1])
     print("expecting " + str(num_messages) + " messages")
 
+    if (len(sys.argv) > 2):
+        folder_name = sys.argv[2]
+        print("extracting images to " + folder_name)
+
 #this wwill subscribe to the image topic and extract the images
 class ImageExtractor():
-    def __init__(self) -> None:
+    def __init__(self, folder_name=None) -> None:
         self.session_path = "/session/"
 
-        # Get the latest folder in /session
-        subfolders = [f.path for f in os.scandir(self.session_path) if f.is_dir()]
+        if folder_name is not None:
+            self.session_path = os.path.join(self.session_path, folder_name)
+        else:
+            # Get the latest folder in /session
+            subfolders = [f.path for f in os.scandir(self.session_path) if f.is_dir()]
 
-        # Get the latest subfolder
-        self.session_path = max(subfolders, key=os.path.getmtime)
+            # Get the latest subfolder
+            self.session_path = max(subfolders, key=os.path.getmtime)
         
         print("extracting images to " + self.session_path)
 
-        self.rgb_path = os.path.join(self.session_path, "rgb")
+        self.rgb_path = os.path.join(self.session_path, "gt_color")
         if not os.path.exists(self.rgb_path):
             os.makedirs(self.rgb_path)
         
         self.image_count = 0
 
         #subscribe to the image topic
-        self.image_sub = rospy.Subscriber("/unreal_ros/image_color", Image, self.image_callback)
+        self.image_sub = rospy.Subscriber("/unreal_ros/ground_truth_color", Image, self.image_callback)
         rospy.spin()
     
     def image_callback(self, data):
@@ -88,4 +96,4 @@ class ImageExtractor():
 
 if __name__ == "__main__":
     rospy.init_node("image_extractor", anonymous=True)
-    image_extractor = ImageExtractor()
+    image_extractor = ImageExtractor(folder_name)

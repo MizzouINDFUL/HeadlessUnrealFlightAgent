@@ -5,19 +5,22 @@ session:
 
 unreal:
 	separate_session: false #will open a separate tmux session for the editor instead of using the same one as the launcher. useful for debugging
-	start_game: true #start game after launching the editor automatically
+	start_game: false #start game after launching the editor automatically
 	use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
-	headless: true #run the editor in headless mode - otherwise will run normally, with GUI (which will not work with docker)
+	headless: false #run the editor in headless mode - otherwise will run normally, with GUI (which will not work with docker)
 	docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
 	engine_path: "/home/mindful/EpicGames/UE5.1"
 	project_path: "/home/mindful/Documents/UnrealProjects/Downtown"
-	actors_to_tag: "ASplineCar_1:car"
+	actors_to_tag: "ASplineCar7:car"
 
 simulation:
+	outputSizeX: 2048
+	outputSizeY: 1024
+	store_in_bag: true
+	start_airsim: true
 	num_lives: 100
 	target_is_time: false #if false, we count frames instead of seconds
-	time: 80
-	target: 80
-	record_delay: 20 #delay before starting to record
+	target: 20
+	record_delay: 0 #delay before starting to record
 	tags_to_track: "car"
 	extract_on_end: true

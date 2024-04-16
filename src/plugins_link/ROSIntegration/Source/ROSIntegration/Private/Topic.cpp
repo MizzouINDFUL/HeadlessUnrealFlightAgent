@@ -5,9 +5,23 @@
 #include "Conversion/Messages/BaseMessageConverter.h"
 #include "Conversion/Messages/std_msgs/StdMsgsStringConverter.h"
 #include "Conversion/Messages/std_msgs/StdMsgsBoolConverter.h"
+#include "Conversion/Messages/sensor_msgs/SensorMsgsImageConverter.h"
 #include "Conversion/Messages/geometry_msgs/GeometryMsgsVector3Converter.h"
 #include "Conversion/Messages/geometry_msgs/GeometryMsgsPointConverter.h"
 #include "Conversion/Messages/geometry_msgs/GeometryMsgsPoseConverter.h"
+
+#include "Misc/FileHelper.h"
+#include "IImageWrapperModule.h"
+#include "IImageWrapper.h"
+#include "RenderUtils.h"
+
+#if WITH_OPENCV
+
+#include "PreOpenCVHeaders.h"
+#include <opencv2/imgcodecs.hpp>
+#include "PostOpenCVHeaders.h"
+
+#endif
 
 
 
@@ -192,6 +206,7 @@ UTopic::UTopic(const FObjectInitializer& ObjectInitializer)
 		SupportedMessageTypes.Add(EMessageType::Pose, TEXT("geometry_msgs/Pose"));
 		SupportedMessageTypes.Add(EMessageType::Quaternion, TEXT("geometry_msgs/Quaternion"));
 		SupportedMessageTypes.Add(EMessageType::Twist, TEXT("geometry_msgs/Twist"));
+		SupportedMessageTypes.Add(EMessageType::Image, TEXT("sensor_msgs/Image"));
 
 	}
 }
@@ -318,6 +333,11 @@ void UTopic::Init(const FString& TopicName, EMessageType MessageType, int32 Queu
 	{
 		UE_LOG(LogROS, Warning, TEXT("ROSIntegrationGameInstance does not exist."));
 	}
+}
+
+void UTopic::InitImage(const FString& TopicName, int32 QueueSize)
+{
+	Init(TopicName, EMessageType::Image, QueueSize);
 }
 
 bool UTopic::Subscribe()
@@ -505,6 +525,214 @@ bool UTopic::Subscribe()
 	}
 
 	return success;
+}
+
+bool UTopic::BGRAtoBGR(const TArray<uint8>& InData, uint8* OutData, int32 Width, int32 Height)
+{
+	if (InData.Num() != Width * Height * 4)
+	{
+		UE_LOG(LogROS, Error, TEXT("BGRAtoBGR: InData.Num() != Width * Height * 4"));
+		return false;
+	}
+
+	for (int32 i = 0; i < Width * Height; i++)
+	{
+		OutData[i * 3 + 0] = InData[i * 4 + 0];
+		OutData[i * 3 + 1] = InData[i * 4 + 1];
+		OutData[i * 3 + 2] = InData[i * 4 + 2];
+	}
+
+	return true;
+}
+
+bool UTopic::PublishImageMessageFromPNG(const FString& FilePath, const int32 id)
+{
+	check(_Implementation->_MessageType == TEXT("sensor_msgs/Image"));
+
+	if (!_State.Advertised)
+	{
+		if (!Advertise())
+		{
+			return false;
+		}
+	}
+
+	TArray<uint8> ImageData;
+    if(FFileHelper::LoadFileToArray(ImageData, *FilePath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Image read successfully"));
+
+        IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+
+        EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(ImageData.GetData(), ImageData.Num());
+        if (ImageFormat == EImageFormat::Invalid)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to detect image format for file: %s"), *FilePath);
+            return false;
+        }
+
+        TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+        
+        TArray<uint8> RawData;
+        ImageWrapper->SetCompressed(ImageData.GetData(), ImageData.Num());
+        ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData);
+        if (RawData.Num() == 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to decompress image file: %s"), *FilePath);
+            return false;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Image decompressed successfully"));
+        
+			uint8* OutData = new uint8[RawData.Num() / 4 * 3];
+			if (!BGRAtoBGR(RawData, OutData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight()))
+			{
+				UE_LOG(LogROS, Error, TEXT("Failed to convert BGRA to BGR"));
+				return false;
+			}
+			uint32 Width = ImageWrapper->GetWidth();
+			uint32 Height = ImageWrapper->GetHeight();
+			FDateTime Now = FDateTime::UtcNow();
+			FROSTime time = FROSTime::Now();
+
+			TSharedPtr<ROSMessages::sensor_msgs::Image> msg = MakeShareable(new ROSMessages::sensor_msgs::Image);
+			msg->data = OutData;
+			msg->height = Height;
+			msg->width = Width;
+			msg->encoding = TEXT("bgr8");
+			msg->header.seq = 0;
+			msg->header.time = time;
+			msg->header.frame_id = FString::Printf(TEXT("frame_%d"), id);
+			msg->step = Width * 3;
+			return _Implementation->Publish(msg);
+		}
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("FFileHelper: Could not read image"));
+		return false;
+	}
+}
+
+bool UTopic::CheckImagePaths(const TArray<FString>& FilePaths)
+{
+	for (const FString& FilePath : FilePaths)
+	{
+		// if (!FPaths::FileExists(FilePath))
+		// {
+		// 	UE_LOG(LogROS, Error, TEXT("Image Check: File not found: %s"), *FilePath);
+		// 	return false;
+		// }
+
+		TArray<uint8> ImageData;
+		if (!FFileHelper::LoadFileToArray(ImageData, *FilePath))
+		{
+			UE_LOG(LogROS, Error, TEXT("Image Check: Failed to load image file: %s"), *FilePath);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool UTopic::Test_PublishGroundTruthFromPNG(const FString& FilePath, const int32 id)
+{
+	check(_Implementation->_MessageType == TEXT("std_msgs/String"));
+
+	if (!_State.Advertised)
+	{
+		if (!Advertise())
+		{
+			return false;
+		}
+	}
+
+	TArray<uint8> ImageData;
+    if(FFileHelper::LoadFileToArray(ImageData, *FilePath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Image read successfully"));
+
+        IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+
+        EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(ImageData.GetData(), ImageData.Num());
+        if (ImageFormat == EImageFormat::Invalid)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to detect image format for file: %s"), *FilePath);
+            return false;
+        }
+
+        TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+        
+        TArray<uint8> RawData;
+        ImageWrapper->SetCompressed(ImageData.GetData(), ImageData.Num());
+        ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData);
+        if (RawData.Num() == 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to decompress image file: %s"), *FilePath);
+            return false;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Image decompressed successfully"));
+        
+			uint8* OutData = new uint8[RawData.Num() / 4 * 3];
+			if (!BGRAtoBGR(RawData, OutData, ImageWrapper->GetWidth(), ImageWrapper->GetHeight()))
+			{
+				UE_LOG(LogROS, Error, TEXT("Failed to convert BGRA to BGR"));
+				return false;
+			}
+			uint32 Width = ImageWrapper->GetWidth();
+			uint32 Height = ImageWrapper->GetHeight();
+
+			//target color is (0,0,0)
+			//traverse through every pixel and find coordinates of pixels with target color
+			//create a bounding box out of the array of found pixels
+			//send the bounding box info as ground truth
+
+			TArray<FVector2D> GT_Pixels;
+
+        	for(int i=0; i<Height; i++)
+			{
+				for(int j=0; j<Width; j++)
+				{
+					// if(FColor(OutData[i*Width*3 + j*3], OutData[i*Width*3 + j*3 + 1], OutData[i*Width*3 + j*3 + 2]) == FColor(179, 185, 236))
+					if(FColor(OutData[i*Width*3 + j*3], OutData[i*Width*3 + j*3 + 1], OutData[i*Width*3 + j*3 + 2]) == FColor(0, 0, 0))
+					{
+						// UE_LOG(LogTemp, Warning, TEXT("Found target color at %d, %d"), i, j);
+						GT_Pixels.Add(FVector2D(i, j));
+					}
+				}
+			}
+
+        	FBox2D GT_Box = FBox2D(GT_Pixels);
+
+			FString GroundTruthData;
+
+        	// Create ground truth data string
+        	FString FrameName = FString::Printf(TEXT("f%d"), id);
+        	FString Annotation = FString::Printf(TEXT("{\"class\": \"%s\", \"shape\": {\"data\": [%f, %f, %f, %f], \"type\": \"bbox_xywh\"}}"), *FString("car"), GT_Box.Min.Y, GT_Box.Min.X, GT_Box.Max.Y - GT_Box.Min.Y, GT_Box.Max.X - GT_Box.Min.X);
+        	FString FrameAnnotation = FString::Printf(TEXT("{\"annotations\": [%s]}"), *Annotation);
+
+        	if (GroundTruthData.IsEmpty())
+        	{
+        		GroundTruthData = FString::Printf(TEXT("{\"frameAnnotations\": {\"%s\": %s}}"), *FrameName, *FrameAnnotation);
+        	}
+        	else
+        	{
+        		GroundTruthData = FString::Printf(TEXT("%s, \"%s\": %s}"), *GroundTruthData, *FrameName, *FrameAnnotation);
+        	}
+
+			TSharedPtr<ROSMessages::std_msgs::String> msg = MakeShareable(new ROSMessages::std_msgs::String);
+			msg->_Data = GroundTruthData;
+			return _Implementation->Publish(msg);
+			
+		}
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("FFileHelper: Could not read image"));
+		return false;
+	}
 }
 
 

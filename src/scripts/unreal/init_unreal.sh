@@ -4,8 +4,8 @@ eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 if [ ! -d $unreal_project_path/Plugins ]; then
     mkdir $unreal_project_path/Plugins
 else
-    mv $unreal_project_path/Plugins $unreal_project_path/Plugins_original
-    mkdir $unreal_project_path/Plugins
+    cp -r $unreal_project_path/Plugins $unreal_project_path/Plugins_original
+    # mkdir $unreal_project_path/Plugins
 fi
 
 #for each folder in $UELAUNCHER_HOME/src/plugins_link, link it to the project in $unreal_project_path/Plugins. force to replace existing links
@@ -54,7 +54,7 @@ fi
 
 #launch the project
 if [ $unreal_headless == true ]; then
-    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" -RenderOffscreen UNATTENDED
+    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" -RenderOffscreen -imgOutputX=$simulation_outputSizeX -imgOutputY=$simulation_outputSizeY -ground_truth=$unreal_actors_to_tag -num_frames=$simulation_target UNATTENDED
 else
-    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" UNATTENDED
+    $unreal_engine_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" -logcmds="LogDerivedDataCacheVerbose" -imgOutputX=$simulation_outputSizeX -imgOutputY=$simulation_outputSizeY -ground_truth=$unreal_actors_to_tag -num_frames=$simulation_target
 fi
