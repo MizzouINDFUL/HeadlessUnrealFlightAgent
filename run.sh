@@ -1,13 +1,6 @@
 THISFOLDER=$(dirname $(readlink -f $0))
 source $THISFOLDER/src/scripts/shared.sh
 eval $(parse_yaml $1)
-# eval $(parse_yaml $HOME_DIR/config.yml)
-
-#if $THISFOLDER/agent doesnt exist, users havent ran setup.sh first
-if [ ! -d "$THISFOLDER/agent" ]; then
-    echo "Please run setup.sh first."
-    exit 1
-fi
 
 #if tmp folder doesnt exist, create it
 if [ ! -d "$HOME_DIR/tmp" ]; then
