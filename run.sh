@@ -100,9 +100,9 @@ bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src
 
 ROS_PORT=$(yq e '.ports_to_reserve[3].rosbridge_listener' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 ENABLE_ROS=$(yq e '.ros.enable' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
-if [ "$ENABLE_ROS" = true ]; then
+if [ "$ENABLE_ROS" == true ]; then
     ROS_USE_DOCKER=$(yq e '.ros.use_docker' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
-    if [ "$ROS_USE_DOCKER" = true ]; then
+    if [ "$ROS_USE_DOCKER" == true ]; then
         ROS_IMAGE=$(yq e '.ros.docker_image' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 
         tmux send-keys -t $SESSIONNAME:ROS "docker kill $SESSIONNAME-airsim-ros" C-m
@@ -114,7 +114,7 @@ if [ "$ENABLE_ROS" = true ]; then
         --rm --name $SESSIONNAME-airsim-ros \
         $ROS_IMAGE /init-rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     else
-        tmux send-keys -t $SESSIONNAME:ROS "source $HOME_DIR/src/airsim-ros/init_rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
+        tmux send-keys -t $SESSIONNAME:ROS "$HOME_DIR/src/airsim-ros/init-rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     fi
 
 fi
