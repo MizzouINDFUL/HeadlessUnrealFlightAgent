@@ -114,7 +114,7 @@ if [ "$ENABLE_ROS" = true ]; then
         --rm --name $SESSIONNAME-airsim-ros \
         $ROS_IMAGE /init-rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     else
-        tmux send-keys -t $SESSIONNAME:ROS "source $HOME_DIR/src/scripts/airsim-ros/init_rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
+        tmux send-keys -t $SESSIONNAME:ROS "source $HOME_DIR/src/airsim-ros/init_rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     fi
 
 fi
