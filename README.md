@@ -1,4 +1,4 @@
-# Headless Unreal Flight Agent
+# MizSIM: Headless Unreal Flight Agent
 
 An extension of Headless Unreal Launcher with focus on collecting simulation data from AirSim flights. Every Unreal project laucnhed with this solution will be hooked up with AirSim, ROSIntegration, ROSIntegrationVision, and a couple of other plugins to establish communication between the engine and rosbridge. All data is collected into a rosbag, and then extracted into a folder in the "bags" directory.
 
