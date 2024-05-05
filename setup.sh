@@ -3,7 +3,6 @@ THISFOLDER=$(dirname $(readlink -f $0))
 # Check if --clear flag is passed
 if [[ $1 == "--clear" ]]; then
     echo "Clearing Docker images..."
-    docker rmi unreal-launcher-ros
     docker rmi unreal-launcher-airsim-ros
     docker rmi ultralytics/ultralytics
     docker rmi ghcr.io/epicgames/unreal-engine:dev-5.1.0
@@ -20,10 +19,7 @@ ln -s $THISFOLDER/src/airsim-ros/shared/src/agent $THISFOLDER/agent
 # Create a new session and detach from it
 tmux new-session -d -s unreal-setup
 
-echo "Installing ROS docker image. You can check the progress by running 'tmux attach -t unreal-setup'"
-tmux send-keys -t unreal-setup "cd $THISFOLDER/src/ros; docker build -t unreal-launcher-ros .; exit" C-m
-
-echo "Installing AirSim docker image. You can check the progress by running 'tmux attach -t unreal-setup'"
+echo "Installing ROS + AirSim docker image. You can check the progress by running 'tmux attach -t unreal-setup'"
 
 tmux new-window -t unreal-setup
 tmux send-keys -t unreal-setup "cd $THISFOLDER/src/airsim-ros; docker build -t unreal-launcher-airsim-ros .; exit" C-m

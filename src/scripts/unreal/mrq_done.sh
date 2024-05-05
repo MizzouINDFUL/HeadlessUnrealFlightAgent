@@ -1,6 +1,11 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
 eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
-CURRLIFE=$(ls -l $UELAUNCHER_HOME/bags/$SIM_START_DATE/ | grep -c ^d)
+
+CURRLIFE=$(yq e '.current_life' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+RESTART_SIGNAL_PORT=$(yq e '.ports_to_reserve[1].life_restart_listener' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+EXTRACTION_PORT=$(yq e '.ports_to_reserve[2].rosbag_extraction_listener' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+SESSIONROOT=$(yq e '.session.basename' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+SHOULD_EXTRACT=$(yq e '.ros.extract_bags' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
 echo "Ending life $CURRLIFE"
 
@@ -8,14 +13,13 @@ echo "Ending life $CURRLIFE"
 tmux send-keys -t $SESSIONNAME:ROS-Bags C-c
 
 #kill the AirSim window in SIM
-docker kill unreal-launcher-airsim-ros
+tmux send-keys -t $SESSIONNAME:AirSim C-c
+sleep 0.2
 tmux kill-window -t $SESSIONNAME:AirSim
 
 sleep 2
 
-tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py" C-m
-
-if [ $simulation_extract_on_end == true ]; then
+if [ $SHOULD_EXTRACT == true ]; then
 
     echo "Extracting bags"
 
@@ -24,14 +28,25 @@ if [ $simulation_extract_on_end == true ]; then
     tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh; \
         eval $(parse_yaml $UELAUNCHER_HOME/config.yml)" C-m
 
+    RUN_YOLO=$(yq e '.yolo.enable' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+    YOLO_FULL_COMMAN=""
+    if [ $RUN_YOLO == true ]; then
+        RUN_YOLO_DOCKER=$(yq e '.yolo.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+
+        if [ $RUN_YOLO_DOCKER == true ]; then
+            YOLO_FULL_COMMAND="docker kill $SESSIONNAME-yolo; \
+            docker run -it --rm --gpus all --name $SESSIONNAME-yolo -v $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml:/config.yml -v $UELAUNCHER_HOME/bags/$SESSIONROOT/$CURRLIFE:/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py;"
+        else
+            YOLO_FULL_COMMAND="python3 $UELAUNCHER_HOME/src/scripts/yolo/run_yolo.py $UELAUNCHER_HOME/bags/$SESSIONROOT/$CURRLIFE"
+        fi
+    fi
+
     tmux send-keys -t $SESSIONNAME:Bags-Extract \
-        "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py; \
+        "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py $EXTRACTION_PORT $SESSIONNAME; \
         tmux kill-window -t $SESSIONNAME:ROS-Bags; \
         docker kill $SESSIONNAME-yolo; \
-        echo $(($CURRLIFE+0)); sleep 10;
-        docker run -it --rm --gpus all --name $SESSIONNAME-yolo -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/$(($CURRLIFE+0)):/session -v $UELAUNCHER_HOME/src/scripts/yolo:/scripts ultralytics/ultralytics python3 /scripts/run_yolo.py; \
-        export NUM_LIVES=$(($NUM_LIVES+1)); \
-        python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py; \
+        $YOLO_FULL_COMMAND \
+        python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py $RESTART_SIGNAL_PORT; \
         tmux select-window -t $SESSIONNAME:Orchestrator; \
         tmux kill-window -t $SESSIONNAME:Bags-Extract; \
         " C-m
@@ -42,11 +57,10 @@ if [ $simulation_extract_on_end == true ]; then
     fi
 
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags
-    tmux send-keys -t $SESSIONNAME:ROS-Bags "mv *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument" C-m
+    tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT" C-m
 else
     echo "Not extracting bags"
     tmux kill-window -t $SESSIONNAME:ROS-Bags
-    export NUM_LIVES=$(($NUM_LIVES+1))
-    python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py
+    python3 $UELAUNCHER_HOME/src/scripts/send_restart_signal.py $RESTART_SIGNAL_PORT
     tmux select-window -t $SESSIONNAME:Orchestrator
 fi

@@ -28,10 +28,10 @@ __Category: unreal__
 | -------- | -------- |
 | separate_session (true/false)   | creates a separate tmux session for the Unreal  instance when true. Otherwise, the engine will be included with your main session in a separate window   |
 | start_game (true/false)   | If true, will automatically start the game once the editor is ready   |
-| use_docker (true/false)   | When true, the unreal project will be launched from inside a docker container that has a build of Unreal Engine in it. Otherwise it will run a local build of Unreal specified in the _engine_path_ parameter   |
+| use_docker (true/false)   | When true, the unreal project will be launched from inside a docker container that has a build of Unreal Engine in it. Otherwise it will run a local build of Unreal specified in the _local_path_ parameter   |
 | headless (true/false)   | When true, will run the Unreal project with -RenderOffscreen flag. Set this to true when runnning on a headless server   |
 | docker_image | the name of the docker image to run when _use_docker_ is set to true   |
-| engine_path   | The root folder of the engine build to use when _use_docker_ is false   |
+| local_path   | The root folder of the engine build to use when _use_docker_ is false   |
 | project_path   | The root folder of the project to launch   |
 | actors_to_tag   | Will add tags to actors in the level. Format: "ActorName:Tag1, ActoName2:Tag2, ..."   |
 

@@ -27,16 +27,20 @@ if [ ! $MORE_SESSIONS_EXIST -gt 1 ]; then
     fi
 fi
 
-#check if the $UELAUNCHER_HOME/bags/$SIM_START_DATE folder is empty. If it is, delete it
-if [ ! "$(ls -A $UELAUNCHER_HOME/bags/$SIM_START_DATE)" ]; then
-    rm -r $UELAUNCHER_HOME/bags/$SIM_START_DATE
+#check if the $UELAUNCHER_HOME/bags/$SESSIONROOT folder is empty. If it is, delete it
+if [ ! "$(ls -A $UELAUNCHER_HOME/bags/$SESSIONROOT)" ]; then
+    rm -r $UELAUNCHER_HOME/bags/$SESSIONROOT
     
     if [ -f $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log ]; then
         rm $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log
     fi
 else
     if [ -f $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log ]; then
-        mv $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log $UELAUNCHER_HOME/bags/$SIM_START_DATE/Unreal.log
+        mv $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log $UELAUNCHER_HOME/bags/$SESSIONROOT/$SESSIONNAME-Unreal.log
     fi
-    cp $UELAUNCHER_HOME/src/scripts/yolo/generate_videos.py $UELAUNCHER_HOME/bags/$SIM_START_DATE/generate_videos.py
+    cp $UELAUNCHER_HOME/src/scripts/yolo/generate_videos.py $UELAUNCHER_HOME/bags/$SESSIONROOT/generate_videos.py
 fi
+
+rm $UELAUNCHER_HOME/src/logs/$SIM_START_DATE-Unreal.log
+rm $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml
+rm $UELAUNCHER_HOME/tmp/$SESSIONNAME-tmux.conf

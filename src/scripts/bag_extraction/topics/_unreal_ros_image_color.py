@@ -5,7 +5,28 @@ import numpy as np
 import socket
 import cv2
 from sensor_msgs.msg import Image
+import yaml
 
+port = 1234
+curr_life = 1
+sessionname = ""
+
+if not os.path.exists("/config.yml"):
+    print("config.yml not found")
+    exit(1)
+
+with open("/config.yml", 'r') as stream:
+    try:
+        config = yaml.safe_load(stream)
+        port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
+        curr_life = config["current_life"]
+        sessionname = config["sessionname"]
+        print(f"Port number found in the config file: {port}")
+        print(f"Current life found in the config file: {curr_life}")
+        print(f"Session name found in the config file: {sessionname}")
+    except yaml.YAMLError as exc:
+        print(exc)
+        exit(1)
 
 print("getting ready to extract color imagery from Unreal")
 if (len(sys.argv) < 2):
@@ -20,11 +41,8 @@ class ImageExtractor():
     def __init__(self) -> None:
         self.session_path = "/session/"
 
-        # Get the latest folder in /session
-        subfolders = [f.path for f in os.scandir(self.session_path) if f.is_dir()]
-
         # Get the latest subfolder
-        self.session_path = max(subfolders, key=os.path.getmtime)
+        self.session_path = self.session_path + str(curr_life)
         
         print("extracting images to " + self.session_path)
 
@@ -35,7 +53,8 @@ class ImageExtractor():
         self.image_count = 0
 
         #subscribe to the image topic
-        self.image_sub = rospy.Subscriber("/unreal_ros/image_color", Image, self.image_callback)
+        full_topic = "/" + sessionname + "/unreal_ros/image_color"
+        self.image_sub = rospy.Subscriber(full_topic, Image, self.image_callback)
         rospy.spin()
     
     def image_callback(self, data):
@@ -54,7 +73,7 @@ class ImageExtractor():
             
             #send done message. just send "1" to indicate it's done
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('localhost', 1234))
+            s.connect(('localhost', port))
 
             s.sendall('2'.encode('utf-8'))
 

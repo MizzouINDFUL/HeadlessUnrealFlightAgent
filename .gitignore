@@ -9,6 +9,6 @@
 /src/setup/unreal/password.txt
 /src/setup/unreal/username.txt
 src/plugins_link/MindfulPlugin/Content/CitySampleVehicles
-/run.sh
 /agent
 .vscode/
+_Dockerfile

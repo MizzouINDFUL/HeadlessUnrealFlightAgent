@@ -4,13 +4,12 @@ import time
 import sys
 import glob
 
-life_idx = 0
+life_idx = 1
 rain_alpha = 0.0
 max_rain = 9000000.0
 
 if (len(sys.argv) > 1):
     life_idx = int(sys.argv[1])
-
 
 if life_idx >= 1 and life_idx <= 100:
     life_group = (life_idx - 1) // 10
@@ -31,8 +30,11 @@ num_frames = -1
 overrideResX = -1
 overrideResY = -1
 
+topicDefinitions = ""
+layersToExport = ""
+
 args = unreal.SystemLibrary.get_command_line()
-tokens, switches, params = unreal.SystemLibrary.parse_command_line(args);
+tokens, switches, params = unreal.SystemLibrary.parse_command_line(args)
 
 unreal.log("tokens: " + str(tokens))
 unreal.log("switches: " + str(switches))
@@ -51,6 +53,10 @@ if "imgOutputX" in params:
 if "imgOutputY" in params:
     overrideResY = int(params["imgOutputY"])
     unreal.log("overrideResY: " + str(overrideResY))
+
+if "layers_to_export" in params:
+    layersToExport = params["layers_to_export"]
+    unreal.log("layersToExport: " + layersToExport)
 
 def OnJobFinishedCallback(params):
     unreal.log("job finished")
@@ -94,6 +100,29 @@ job.set_configuration(config_ref)
 outputSetting = job.get_configuration().find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting)
 outputSetting.flush_disk_writes_per_shot = True
 
+ROSOutput = config_ref.find_or_add_setting_by_class(unreal.MoviePipelineROSOutput)
+
+if layersToExport != "":
+    def_layer = config_ref.find_or_add_setting_by_class(unreal.MoviePipelineDeferredPassBase)
+    for layer in layersToExport.split("+"):
+        new_pass = unreal.MoviePipelinePostProcessPass()
+        new_pass.enabled = True
+        new_pass.material = asset_reg.get_asset_by_object_path(layer).get_asset()
+        if new_pass.material is None:
+            unreal.log_warning("Could not find material for layer: " + layer)
+        else:
+            #check if any on the additional post process materials already have this material
+            already_added = False
+            for pass_to_check in def_layer.additional_post_process_materials:
+                if pass_to_check.material == new_pass.material:
+                    unreal.log("Material already added to layer: " + layer)
+                    already_added = True
+
+            if not already_added:
+                unreal.log("Adding layer: " + layer)
+                def_layer.additional_post_process_materials.append(new_pass)
+
+
 if overrideResX > 0 and overrideResY > 0:
     outputSetting.output_resolution = unreal.IntPoint(overrideResX, overrideResY)
 
@@ -108,6 +137,7 @@ SubsystemExecutor.on_executor_finished_delegate.add_callable_unique(OnQueueFinis
 SubsystemExecutor.on_individual_job_work_finished_delegate.add_callable_unique(OnJobFinishedCallback)
 SubsystemExecutor.on_individual_shot_work_finished_delegate.add_callable_unique(OnShotFinishedCallback)
 
+unreal.SystemLibrary.execute_console_command(None, "py add_ros_param_override.py")
 unreal.SystemLibrary.execute_console_command(None, "py clear_renders.py")
 unreal.SystemLibrary.execute_console_command(None, "py set_stencil_colors.py")
 time.sleep(3)

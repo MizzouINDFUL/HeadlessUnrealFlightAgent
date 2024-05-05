@@ -1,6 +1,7 @@
 THISFOLDER=$(dirname $(readlink -f $0))
 source $THISFOLDER/src/scripts/shared.sh
-eval $(parse_yaml $HOME_DIR/config.yml)
+eval $(parse_yaml $1)
+# eval $(parse_yaml $HOME_DIR/config.yml)
 
 #if $THISFOLDER/agent doesnt exist, users havent ran setup.sh first
 if [ ! -d "$THISFOLDER/agent" ]; then
@@ -13,87 +14,110 @@ if [ ! -d "$HOME_DIR/tmp" ]; then
     mkdir $HOME_DIR/tmp
 fi
 
-#Handling multiple sessions
+SESSIONBASENAME=$(yq e '.session.basename' $1)
 
+#Handling multiple sessions in parallel
 all_sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
-num_sim_sessions=$(echo "$all_sessions" | grep -c "^$session_basename")
+num_sim_sessions=$(echo "$all_sessions" | grep -c "^$SESSIONBASENAME")
 
-#cancel if there are too many sessions (and $session_max is not equal to -1)
-if [ "$session_max" != "-1" ]; then
-   if [ "$num_sim_sessions" -ge "$session_max" ]; then
+SESSIONNAME="$SESSIONBASENAME$num_sim_sessions"
+
+#saving an intermediate yml file that stores the parameters for the imulation as well as its current state
+cp $1 $HOME_DIR/tmp/$SESSIONNAME-config.yml
+
+SESSIONBASENAME=$(yq e '.session.basename' $1)
+MAXSESSIONS=$(yq e '.session.max' $1)
+START_LIFE=$(yq e '.session.start_life' $1)
+END_LIFE=$(yq e '.session.end_life' $1)
+
+# yq e ".sessionname = $SESSIONNAME" -i $HOME_DIR/tmp/$SESSIONNAME-config.yml
+yq e ".current_life = $START_LIFE" -i $HOME_DIR/tmp/$SESSIONNAME-config.yml
+yq e ".sessionname = \"$SESSIONNAME\"" -i $HOME_DIR/tmp/$SESSIONNAME-config.yml
+
+#Get available ports for each entry in 'ports_to_reserve' and write them to the config file
+python3 src/scripts/find_available_ports.py $SESSIONBASENAME $num_sim_sessions
+
+#this will generate a txt file with all the arguments we want to pass to UnrealEditor-Cmd.sh
+python3 src/scripts/parse_unreal_arguments.py $HOME_DIR/tmp/$SESSIONNAME-config.yml
+
+#cancel if there are too many sessions (and $MAXSESSIONS is not equal to -1)
+if [ "$MAXSESSIONS" != "-1" ]; then
+   if [ "$num_sim_sessions" -ge "$MAXSESSIONS" ]; then
       echo "Maximum number of sessions reached. Please close some sessions before starting a new one."
       exit 1
    fi
 fi
 
-SESSIONNAME=$session_basename
-SESSIONNAME="$SESSIONNAME$num_sim_sessions"
-
-export SESSIONNAME=$SESSIONNAME
-export SESSIONINDEX=$num_sim_sessions
-
-export UELAUNCHER_HOME=$HOME_DIR
-export SIM_START_DATE=$(date +%Y-%m-%d_%H-%M-%S)
-export NUM_LIVES=0
+UELAUNCHER_HOME=$HOME_DIR
+SIM_START_DATE=$(date +%Y-%m-%d_%H-%M-%S)
+SESSIONROOT=$SESSIONBASENAME
 
 init_unreal_script="init_unreal.sh"
-
 if [ $unreal_use_docker == true ]; then
     init_unreal_script="init_unreal_docker.sh"
 fi
 
-mkdir ./bags/$SIM_START_DATE
+# mkdir ./bags/$SIM_START_DATE
+#check if ./bags/$SESSIONROOT exists. If it doesn't, create it
+if [ ! -d "$UELAUNCHER_HOME/bags/$SESSIONROOT" ]; then
+    mkdir $UELAUNCHER_HOME/bags/$SESSIONROOT
+fi
 
-echo "" > $HOME_DIR/src/logs/Unreal.log
-echo "" > $HOME_DIR/src/plugins_link/CommandLineExternal/command.txt
+touch $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log
+echo "" > $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log
 
 #go to project directory and delete Saved/Crashes and Saved/Autosaves. If the game wasn't closed properly before,
-# this next run will propmt us with a "Restore Packages" window that is not interactive when headless and so the game will not start
+#this next run will propmt us with a "Restore Packages" window. That window is not interactive in headless mode and so the game will not start
 rm -r $unreal_project_path/Saved/Crashes > /dev/null 2>&1
 rm -r $unreal_project_path/Saved/Autosaves > /dev/null 2>&1
 
 #get the name of the game project from the config file parameter $unreal_project_path. Get the name of the last folder in that path
-export GAME_PROJECT_NAME=$(echo $unreal_project_path | rev | cut -d'/' -f1 | rev)
+GAME_PROJECT_NAME=$(echo $unreal_project_path | rev | cut -d'/' -f1 | rev)
 echo "GAME_PROJECT_NAME: $GAME_PROJECT_NAME"
 
-#This will initiate the basic structure of tmux:
-# - Unreal Engine: This is where we are talking to the instance of UE: both compilation adn the launch of the project are happening here
-# - tellunreal: a window where we can send commands to the Unreal Engine instance. For example: tellunreal 'py print("hello world")' will execute a hello world command in the Unreal Engine instance
-# - Orchestartor: a window that tracks the logs of the current Unreal Engine instance and launches scripts whenever it sees trigger phrases in it. Initially this will be create with nothing running in it. But users can new panes to this that will run actual listener scripts whenever it is needed.
+EXPORT_COMMAND="export SESSIONNAME=$SESSIONNAME; export UELAUNCHER_HOME=$UELAUNCHER_HOME; export SIM_START_DATE=$SIM_START_DATE; export SESSIONROOT=$SESSIONROOT; export GAME_PROJECT_NAME=$GAME_PROJECT_NAME"
 
-tmux -f "$UELAUNCHER_HOME/src/tmux.conf" new-session -d -s $SESSIONNAME -n UnrealEngine
+#This will initiate the basic structure of the tmux session:
+# - Unreal Engine: This is where we are talking to the instance of UE: both compilation adn the launch of the project are happening here
+# - tellunreal: a window where we can send commands to the Unreal Engine instance. For example: tellunreal 'py print("hello world")' will print a hello world in the Unreal Engine cmd
+# - Orchestartor: a window that tracks the logs of the current Unreal Engine instance and launches scripts whenever it sees trigger phrases in it.
+# - ROS: a window that launches the docker container that runs the ROS side of the simulation
+ 
+tmux -f "$HOME_DIR/src/tmux.conf" new-session -d -s $SESSIONNAME -n UnrealEngine
 tmux new-window -t $SESSIONNAME:1 -n tellunreal
 tmux new-window -t $SESSIONNAME:2 -n Orchestrator
 tmux new-window -t $SESSIONNAME:3 -n ROS
 
-if [ $unreal_separate_session == false ]; then
-    tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
-    tmux send-keys -t $SESSIONNAME:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
-    bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
-else
-    #check if the tmux session for the game project already exists. If it does, export the outputs of that session to the Unreal.log file
-    if [ $(tmux list-sessions -F "#{session_name}" 2>/dev/null | grep -c "^$GAME_PROJECT_NAME-$SESSIONINDEX") -gt 0 ]; then
-    echo "A runnning instance of Unreal Engine is found. Connecting to that..."
-        sleep 1
-        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
-        $UELAUNCHER_HOME/src/scripts/unreal/start_tellunreal.sh
-        sleep 2
-        tmux send-keys -t $SESSIONNAME:tellunreal "tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine \"cat >> $UELAUNCHER_HOME/src/logs/Unreal.log\"" C-m
-        tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py print(\"External Command Line object is initialized\")'" C-m
-        sleep 1
+tmux send-keys -t $SESSIONNAME:UnrealEngine "$EXPORT_COMMAND" C-m
+tmux send-keys -t $SESSIONNAME:tellunreal "$EXPORT_COMMAND" C-m
+tmux send-keys -t $SESSIONNAME:Orchestrator "$EXPORT_COMMAND" C-m
+tmux send-keys -t $SESSIONNAME:ROS "$EXPORT_COMMAND" C-m
+
+tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "tee -a $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
+tmux send-keys -t $SESSIONNAME:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
+bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
+
+ROS_PORT=$(yq e '.ports_to_reserve[3].rosbridge_listener' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+ENABLE_ROS=$(yq e '.ros.enable' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+if [ "$ENABLE_ROS" = true ]; then
+    ROS_USE_DOCKER=$(yq e '.ros.use_docker' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+    if [ "$ROS_USE_DOCKER" = true ]; then
+        ROS_IMAGE=$(yq e '.ros.docker_image' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+
+        tmux send-keys -t $SESSIONNAME:ROS "docker kill $SESSIONNAME-airsim-ros" C-m
+        tmux send-keys -t $SESSIONNAME:ROS "docker run -it --net host -e DISPLAY=$DISPLAY \
+        -v ./src/airsim-ros/shared:/root/shared \
+        -v $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml:/config.yml \
+        -v $UELAUNCHER_HOME/bags/$SESSIONROOT/:/session \
+        -v $UELAUNCHER_HOME/src/scripts/:/scripts \
+        --rm --name $SESSIONNAME-airsim-ros \
+        $ROS_IMAGE /init-rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     else
-        #if the tmux session for the game project does not exist, create it
-        tmux new-session -d -s $GAME_PROJECT_NAME-$SESSIONINDEX -n UnrealEngine
-        tmux pipe-pane -o -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "tee -a $HOME_DIR/src/logs/Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
-        tmux send-keys -t $GAME_PROJECT_NAME-$SESSIONINDEX:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
-        bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
+        tmux send-keys -t $SESSIONNAME:ROS "source $HOME_DIR/src/scripts/airsim-ros/init_rosbridge.sh $ROS_PORT $SESSIONNAME" C-m
     fi
-    tmux kill-window -t $SESSIONNAME:UnrealEngine
+
 fi
 
-tmux send-keys -t $SESSIONNAME:ROS "docker kill $SESSIONNAME-ros; docker run -it --net host -v $UELAUNCHER_HOME/bags/$SIM_START_DATE/:/session -v $UELAUNCHER_HOME/src/scripts/:/scripts --rm --name $SESSIONNAME-ros unreal-launcher-ros" C-m
-
-#when External Command Line object is initialized, create an alias called 'tellunreal' inside tellunreal tmux window that will send the argument to command.txt in src/plugins_link/CommandLineExternal
 bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/init_viewport_capture.sh
 
 if [ $unreal_start_game == true ]; then
@@ -109,7 +133,6 @@ if [ $simulation_target -gt -1 ]; then
     bind_script_to_event "MRQ SIM FINISHED" $HOME_DIR/src/scripts/unreal/mrq_done.sh true
     bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
 fi
-
 
 tmux set -g mouse on
 tmux attach-session -t $SESSIONNAME:ROS

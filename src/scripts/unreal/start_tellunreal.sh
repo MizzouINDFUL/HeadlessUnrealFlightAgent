@@ -1,2 +1,3 @@
-#create an alias called 'tellunreal' inside tellunreal tmux window that will send the argument to command.txt in src/plugins_link/CommandLineExternal
-tmux send-keys -t $SESSIONNAME:tellunreal "alias tellunreal=\"echo \$1 > $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/command.txt\"" Enter
+TELLUNREAL_PORT=$(yq e '.ports_to_reserve[0].tellunreal_listener' tmp/$SESSIONNAME-config.yml)
+
+tmux send-keys -t $SESSIONNAME:tellunreal "alias tellunreal='function _tellunreal(){ python src/scripts/unreal/send_to_unreal.py $TELLUNREAL_PORT \"\$@\"; };_tellunreal'" Enter

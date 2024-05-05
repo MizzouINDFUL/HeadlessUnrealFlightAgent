@@ -3,15 +3,26 @@ import datetime
 import sys
 import glob
 import os
+import yaml
 
 print("Behavior of this agent: drone will get up and start moving backwards")
+port = 41451
+#if /config.yml exists, read the file and set the connection port
+if os.path.exists('/config.yml'):
+    with open('/config.yml', 'r') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+        port = config["ports_to_reserve"][4]["airsim_api"]
+        print(f"Port number found in the config file: {port}")
+else:
+    print("Port number not found in the config file.")
+    sys.exit(1)
 
 # Check if enough arguments are provided
 if len(sys.argv) < 3:
     print("Not enough arguments provided.")
 
 # Connect to AirSim
-client = airsim.MultirotorClient()
+client = airsim.MultirotorClient(ip="", port=port)
 client.confirmConnection()
 
 import datetime
@@ -62,7 +73,7 @@ if len(sys.argv) >= 2:
 else:
     print("not enough args")
 
-client.simSetTimeOfDay(start_datetime=curr_tod, is_enabled=True)
+# client.simSetTimeOfDay(start_datetime=curr_tod, is_enabled=True)
 
 #temp
 

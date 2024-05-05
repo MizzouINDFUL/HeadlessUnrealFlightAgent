@@ -2,13 +2,18 @@ import os
 import json
 import glob
 import cv2
+import sys
 from ultralytics import YOLO
+
+sessionbase = "/session"
+if len(sys.argv) > 1:
+    sessionbase = sys.argv[1]
 
 # Load the YOLO model
 model = YOLO("yolov8n.pt")
 
 # Define the path to the RGB images folder
-rgb_folder = "/session/rgb"
+rgb_folder = sessionbase + "/rgb"
 
 #if the folder is empty, then exit
 if not os.listdir(rgb_folder):
@@ -16,12 +21,12 @@ if not os.listdir(rgb_folder):
     exit()
 
 # Load the ground truth data
-with open('/session/gt/ground_truth.json') as f:
+with open(sessionbase + "/ground_truth.json") as f:
     gt_data = json.load(f)
 
-os.makedirs('/session/rgb_ground_truth', exist_ok=True)
-os.makedirs('/session/predictions', exist_ok=True)
-os.makedirs('/session/gt_vs_decl', exist_ok=True)
+os.makedirs(sessionbase + "/rgb_ground_truth", exist_ok=True)
+os.makedirs(sessionbase + "/predictions", exist_ok=True)
+os.makedirs(sessionbase +  "/gt_vs_decl", exist_ok=True)
 
 # Initialize the dictionary to store the predictions
 predictions = {
@@ -67,28 +72,26 @@ for filename in files:
 
         if frame_num == '':
             frame_num = '0'
-        # else:
-        #     #choose a previous frame - this is just for an experiment
-        #     #TODO: remove this
-        #     frame_num = str(int(frame_num) - 1)
         
         frame_num = 'f' + frame_num
 
-        # Check if there are annotations for this frame
-        if frame_num in gt_data['frameAnnotations']:
-            # Iterate over all the annotations for this frame
-            for annotation in gt_data['frameAnnotations'][frame_num]['annotations']:
-                # Get the bounding box coordinates
-                bbox = annotation['shape']['data']
+        #temporary disable ground truth annotation
+        #this will be moved to a separate process
+        # # Check if there are annotations for this frame
+        # if frame_num in gt_data['frameAnnotations']:
+        #     # Iterate over all the annotations for this frame
+        #     for annotation in gt_data['frameAnnotations'][frame_num]['annotations']:
+        #         # Get the bounding box coordinates
+        #         bbox = annotation['shape']['data']
 
-                # Draw the bounding box on the image
-                print('drawing bbox', bbox)
-                img_gt_decl = draw_xywh_on_rgb(img_gt_decl, [bbox], [annotation['class']], color=(0, 255, 0))
-        else:
-            print('no annotations for frame', frame_num)
+        #         # Draw the bounding box on the image
+        #         print('drawing bbox', bbox)
+        #         img_gt_decl = draw_xywh_on_rgb(img_gt_decl, [bbox], [annotation['class']], color=(0, 255, 0))
+        # else:
+        #     print('no annotations for frame', frame_num)
 
         # Save the annotated image to the output directory
-        cv2.imwrite(os.path.join('/session/rgb_ground_truth', os.path.basename(filename)), img_gt_decl)
+        # cv2.imwrite(os.path.join(sessionbase + "/rgb_ground_truth', os.path.basename(filename)), img_gt_decl)
 
 
         for result in results:
@@ -132,7 +135,7 @@ for filename in files:
             img_gt_decl = draw_xywh_on_rgb(img_gt_decl, bboxes, classes, color=(255, 0, 0))
 
             # Save the annotated image to the output directory
-            cv2.imwrite(os.path.join('/session/predictions', os.path.basename(filename)), img_decl)
+            cv2.imwrite(os.path.join(sessionbase + "/predictions", os.path.basename(filename)), img_decl)
 
             # Add the predictions to the dictionary
             frame_id = os.path.splitext(os.path.basename(filename))[0]
@@ -151,7 +154,7 @@ for filename in files:
             }
 
         # Save the annotated image to the output directory
-        cv2.imwrite(os.path.join('/session/gt_vs_decl', os.path.basename(filename)), img_gt_decl)
+        # cv2.imwrite(os.path.join(sessionbase + "/gt_vs_decl", os.path.basename(filename)), img_gt_decl)
 
 # Export the predictions to a JSON file
 with open("/session/decl.json", "w") as f:

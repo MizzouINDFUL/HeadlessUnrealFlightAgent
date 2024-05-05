@@ -4,8 +4,15 @@ if [ ! -d ~/Documents/AirSim ]; then
     mkdir ~/Documents/AirSim
 fi
 
-#copy /scripts/settings.json to ~/Documents/AirSim/settings.json
-cp /scripts/settings.json ~/Documents/AirSim/settings.json
+# cp /scripts/settings.json ~/Documents/AirSim/settings.json
+mkdir /tmp
+cp /scripts/settings.json /tmp/settings.json
+
+#a python one liner that reads the port value from a yaml /config.yml (ports_to_reserve: - airsim_api: <PORT>) and sets it to the settings.json file(ApiServerPort)
+python3 /scripts/set_airsim_port.py "/config.yml" "/tmp/settings.json"
+cp /tmp/settings.json ~/Documents/AirSim/settings.json
+
+cat ~/Documents/AirSim/settings.json
 
 for PLUGIN in $(ls /plugins_link)
 do
@@ -31,5 +38,7 @@ done
 unreal_project_name=$(basename /project/*.uproject)
 unreal_project_name=${unreal_project_name%.*}
 
+args=$(< /cmd.txt)
+
 /home/ue4/UnrealEngine/Engine/Build/BatchFiles/Linux/Build.sh $unreal_project_name"Editor" Linux DebugGame /project/$unreal_project_name.uproject -IgnoreJunk -progress
-/home/ue4/UnrealEngine/Engine/Binaries/Linux/UnrealEditor-Linux-DebugGame /project/$unreal_project_name.uproject -RenderOffscreen -imgOutputX=$1 -imgOutputY=$2 -ground_truth=$3 -num_frames=$4
+/home/ue4/UnrealEngine/Engine/Binaries/Linux/UnrealEditor-Linux-DebugGame /project/$unreal_project_name.uproject $args

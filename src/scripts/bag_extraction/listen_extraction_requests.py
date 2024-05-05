@@ -3,21 +3,25 @@ import os
 import time
 import sys
 
-#this should receive socket emssages at localhost, port 1234
+#this should receive socket messages at localhost
 #the messages are python file names that will need to be executed in a new tmux pane from inside a running 'ros' container in the following folder: /scripts/bag_extraction/topics/
 
+SESSIONNAME=""
+port = 1234
+if len(sys.argv) > 1:
+    port = int(sys.argv[1])
+
+if len(sys.argv) > 2:
+    SESSIONNAME = sys.argv[2]
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('localhost', 1234))
+s.bind(('localhost', port))
 s.listen(1)
 num_topics = 0
 num_done = 0
 rosbag_done = False
 topics_extracted = False
 skip = False
-
-optional_arg = None
-if len(sys.argv) > 1:
-    optional_arg = sys.argv[1]
 
 while True:
 
@@ -29,9 +33,9 @@ while True:
         #terminate all tmux panes except for the first one
         #loop from num_topics to 1
         for i in range(num_topics, 0, -1):
-            os.system('tmux select-pane -t $SESSIONNAME:Bags-Extract.{}'.format(i))
+            os.system('tmux select-pane -t {}:Bags-Extract.{}'.format(SESSIONNAME, i))
             time.sleep(0.1)
-            os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "exit" Enter')
+            os.system('tmux send-keys -t {}:Bags-Extract "exit" Enter'.format(SESSIONNAME, i))
             time.sleep(0.1)
 
         break
@@ -80,20 +84,16 @@ while True:
 
         filename = filename.replace(':', ' ')
 
-        #if an optional argument is passed, append that to the filename
-        if optional_arg is not None:
-            filename = filename + ' ' + optional_arg
-
         # focus of $SESSIONNAME:Bafs-Extract tmux window
-        os.system('tmux select-window -t $SESSIONNAME:Bags-Extract')
+        os.system('tmux select-window -t {}:Bags-Extract'.format(SESSIONNAME))
         os.system('tmux split-window -h')
         time.sleep(0.1)
-        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "docker exec -it $SESSIONNAME-ros /bin/bash" Enter')
+        os.system('tmux send-keys -t {}:Bags-Extract "docker exec -it {}-airsim-ros /bin/bash" Enter'.format(SESSIONNAME, SESSIONNAME))
         time.sleep(0.1)
-        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter')
+        os.system('tmux send-keys -t {}:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter'.format(SESSIONNAME))
         time.sleep(0.1)
-        os.system('tmux send-keys -t $SESSIONNAME:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(filename))
-        os.system('tmux select-pane -t $SESSIONNAME:Bags-Extract.0')
-        os.system('tmux resize-pane -t $SESSIONNAME:Bags-Extract.0 -x 30')
-        os.system('tmux select-layout -t $SESSIONNAME:Bags-Extract even-horizontal')
+        os.system('tmux send-keys -t {}:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(SESSIONNAME, filename))
+        os.system('tmux select-pane -t {}:Bags-Extract.0'.format(SESSIONNAME))
+        os.system('tmux resize-pane -t {}:Bags-Extract.0 -x 30'.format(SESSIONNAME))
+        os.system('tmux select-layout -t {}:Bags-Extract even-horizontal'.format(SESSIONNAME))
         time.sleep(1)

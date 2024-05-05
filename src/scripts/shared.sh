@@ -72,10 +72,14 @@ function bind_script_to_event {
 
    #ddo split-window -h if there is only one pane, otherwise do split-window -v
 
+   # tmux send-keys -t $SESSIONNAME:Orchestrator "export SESSIONNAME=$SESSIONNAME" Enter
+   # tmux send-keys -t $SESSIONNAME:Orchestrator "export UELAUNCHER_HOME=$UELAUNCHER_HOME" Enter
    tmux send-keys -t $SESSIONNAME:Orchestrator "tmux split-window -h" Enter
 
    sleep 0.2
    # tmux send-keys -t $SESSIONNAME:Orchestrator "tmux rename-window -t \$TMUX_PANE $PANENAME" Enter
+   tmux send-keys -t $SESSIONNAME:Orchestrator "export SESSIONNAME=$SESSIONNAME" Enter
+   tmux send-keys -t $SESSIONNAME:Orchestrator "export UELAUNCHER_HOME=$UELAUNCHER_HOME" Enter
    tmux send-keys -t $SESSIONNAME:Orchestrator "$UELAUNCHER_HOME/src/scripts/unreal/unreal_tracker.sh \"$1\" \"$2\" \"$CLEARLOG\"" Enter
    sleep 0.1
    #switch focus back to the first pane
@@ -83,7 +87,3 @@ function bind_script_to_event {
    tmux resize-pane -t $SESSIONNAME:Orchestrator.0 -x 30
    tmux select-layout -t $SESSIONNAME:Orchestrator even-horizontal
 }
-
- function get_num_lives_lived {
-   echo $(ls -l $UELAUNCHER_HOME/bags/$SIM_START_DATE/ | grep -c ^d)
- }

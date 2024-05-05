@@ -1,11 +1,18 @@
 import socket
 import os
 import time
+import sys
+
+port = 12345
+#check if there is an argument providedd
+if (len(sys.argv) > 1):
+    port = int(sys.argv[1])
+
+print("listenning for a restart signal at port " + str(port))
 
 #listen for the signal "extracted"
-
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('localhost', 12345))
+s.bind(('localhost', port))
 s.listen(1)
 
 while True:

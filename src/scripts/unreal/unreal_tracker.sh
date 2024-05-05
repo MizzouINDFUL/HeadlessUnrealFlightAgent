@@ -13,18 +13,19 @@ if [ -z "$TRIGGER" ]; then
     exit 1
 fi
 
+echo "session: $SESSIONNAME"
 echo "trigger phrase: '$TRIGGER'"
 echo "binded script: $SCRIPT"
 
 while true; do
-    if [ -f $UELAUNCHER_HOME/src/logs/Unreal.log ]; then
-        if grep -q "$TRIGGER" $UELAUNCHER_HOME/src/logs/Unreal.log; then
+    if [ -f $UELAUNCHER_HOME/src/logs/$SESSIONNAME-Unreal.log ]; then
+        if grep -q "$TRIGGER" $UELAUNCHER_HOME/src/logs/$SESSIONNAME-Unreal.log; then
             echo "Trigger phrase detected. Running script $SCRIPT"
             bash $SCRIPT
             
             if [ "$CLEARLOG" = true ]; then
                 echo "Clearing log file"
-                echo "" > $UELAUNCHER_HOME/src/logs/Unreal.log
+                echo "" > $UELAUNCHER_HOME/src/logs/$SESSIONNAME-Unreal.log
             fi
 
             tmux kill-pane -t $TMUX_PANE
