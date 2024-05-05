@@ -50,10 +50,18 @@ if [ $unreal_use_docker == true ]; then
     init_unreal_script="init_unreal_docker.sh"
 fi
 
-# mkdir ./bags/$SIM_START_DATE
+#check if ./logs exists. If it doesn't, create it
+if [ ! -d "$HOME_DIR/src/logs" ]; then
+    mkdir $HOME_DIR/src/logs
+fi
+
+if [ -d "$HOME_DIR/bags/" ]; then
+    mkdir $HOME_DIR/bags/
+fi
+
 #check if ./bags/$SESSIONROOT exists. If it doesn't, create it
-if [ ! -d "$UELAUNCHER_HOME/bags/$SESSIONROOT" ]; then
-    mkdir $UELAUNCHER_HOME/bags/$SESSIONROOT
+if [ ! -d "$HOME_DIR/bags/$SESSIONROOT" ]; then
+    mkdir $HOME_DIR/bags/$SESSIONROOT
 fi
 
 touch $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log
