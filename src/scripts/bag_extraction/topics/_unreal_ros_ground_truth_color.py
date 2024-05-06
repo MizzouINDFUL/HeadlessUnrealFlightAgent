@@ -8,17 +8,24 @@ from sensor_msgs.msg import Image
 import json
 import yaml
 
+print("getting ready to extract GT color imagery from Unreal")
+if (len(sys.argv) < 4):
+    print("usage: python3 _unreal_ros_ground_truth_color.py num_messages real_num_messages config_path") 
+    exit(1)
+else:
+    num_messages = int(sys.argv[1])
+    print("expecting " + str(num_messages) + " messages")
+
 port = 1234
 curr_life = 1
 sessionname = ""
+config_path = sys.argv[3]
 
-if not os.path.exists("/config.yml"):
+if not os.path.exists(config_path):
     print("config.yml not found")
     exit(1)
 
-
-
-with open("/config.yml", 'r') as stream:
+with open(config_path, 'r') as stream:
     try:
         config = yaml.safe_load(stream)
         port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
@@ -30,14 +37,6 @@ with open("/config.yml", 'r') as stream:
     except yaml.YAMLError as exc:
         print(exc)
         exit(1)
-
-print("getting ready to extract color imagery from Unreal")
-if (len(sys.argv) < 2):
-    print("usage: python3 _unreal_ros_groundt_truth_color.py num_messages")
-    exit(1)
-else:
-    num_messages = int(sys.argv[1])
-    print("expecting " + str(num_messages) + " messages")
 
 # this will subscribe to the image topic and extract the images
 class ImageExtractor():

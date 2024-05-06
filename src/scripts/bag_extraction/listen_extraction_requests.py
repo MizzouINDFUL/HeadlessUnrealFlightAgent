@@ -8,11 +8,15 @@ import sys
 
 SESSIONNAME=""
 port = 1234
+run_in_docker = True
 if len(sys.argv) > 1:
     port = int(sys.argv[1])
 
 if len(sys.argv) > 2:
     SESSIONNAME = sys.argv[2]
+
+if len(sys.argv) > 3:
+    run_in_docker = sys.argv[3] == 'True'
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('localhost', port))
@@ -88,11 +92,18 @@ while True:
         os.system('tmux select-window -t {}:Bags-Extract'.format(SESSIONNAME))
         os.system('tmux split-window -h')
         time.sleep(0.1)
-        os.system('tmux send-keys -t {}:Bags-Extract "docker exec -it {}-airsim-ros /bin/bash" Enter'.format(SESSIONNAME, SESSIONNAME))
+        if run_in_docker:
+            os.system('tmux send-keys -t {}:Bags-Extract "docker exec -it {}-airsim-ros /bin/bash" Enter'.format(SESSIONNAME, SESSIONNAME))
         time.sleep(0.1)
-        os.system('tmux send-keys -t {}:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter'.format(SESSIONNAME))
+        if run_in_docker:
+            os.system('tmux send-keys -t {}:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter'.format(SESSIONNAME))
+        else:
+            os.system('tmux send-keys -t {}:Bags-Extract "source /opt/ros/noetic/setup.bash" Enter'.format(SESSIONNAME))
         time.sleep(0.1)
-        os.system('tmux send-keys -t {}:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(SESSIONNAME, filename))
+        if run_in_docker:
+            os.system('tmux send-keys -t {}:Bags-Extract "python3 /scripts/bag_extraction/topics/{}; exit" Enter'.format(SESSIONNAME, filename))
+        else:
+            os.system('tmux send-keys -t {}:Bags-Extract "python3 src/scripts/bag_extraction/topics/{}; exit" Enter'.format(SESSIONNAME, filename))
         os.system('tmux select-pane -t {}:Bags-Extract.0'.format(SESSIONNAME))
         os.system('tmux resize-pane -t {}:Bags-Extract.0 -x 30'.format(SESSIONNAME))
         os.system('tmux select-layout -t {}:Bags-Extract even-horizontal'.format(SESSIONNAME))

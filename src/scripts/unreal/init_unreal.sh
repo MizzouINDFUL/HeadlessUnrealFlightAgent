@@ -96,6 +96,7 @@ fi
 #Dockerfile edge case
 mkdir $UNREAL_PROJECT_PATH/Intermediate/ShaderAutogen
 chmod a+x $UNREAL_PROJECT_PATH/*
+chmod a+w $UNREAL_PROJECT_PATH/*
 
 if [ -d "/home/ue4" ]; then
     mkdir /home/ue4/.config

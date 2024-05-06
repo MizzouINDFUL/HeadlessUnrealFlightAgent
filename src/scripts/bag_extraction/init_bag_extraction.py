@@ -10,19 +10,28 @@ port = 1234
 
 #if there is an argument passed, it is how many messages are expected in each topic
 num_msgs = -1
+
+config_path = "/config.yml"
 if len(sys.argv) > 1:
     num_msgs = int(sys.argv[1])
 
 if len(sys.argv) > 2:
     port = int(sys.argv[2])
 
+if len(sys.argv) > 3:
+    config_path = sys.argv[3]
+
+is_running_from_container = True
+
 sessionname =""
 #read sessionname from /config.yml
-if os.path.exists('/config.yml'):
-    with open('/config.yml', 'r') as file:
+if os.path.exists(config_path):
+    with open(config_path, 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
         sessionname = config["sessionname"]
         print(f"Session name found in the config file: {sessionname}")
+
+        is_running_from_container = config["ros"]["use_docker"]
 
 topics = [key for x in yaml.safe_load_all(open('topics.yml')) for key in x]
 topic_names = [x['topic'] for x in topics]
@@ -40,6 +49,10 @@ topics_and_num_msgs = {x.replace('/', '_') + '.py': topics_and_num_msgs[x] for x
 #check if the files exist in the following directory: /scripts/bag_extraction/topics/
 #if not, remove them from the list
 files = glob.glob('/scripts/bag_extraction/topics/*.py')
+
+if not is_running_from_container:
+    files = glob.glob('src/scripts/bag_extraction/topics/*.py')
+
 files = [os.path.basename(x) for x in files]
 files = [x for x in files if x in topic_names]
 
@@ -64,12 +77,12 @@ if min_num_msgs != 0:
     for key in topics_and_num_msgs:
         topics_and_num_msgs[key] = min_num_msgs
 
-#replace every filename in files with file:min_num_msgs:actual_num_msgs
+#replace every filename in files with file:min_num_msgs:actual_num_msgs:config_path
 for i in range(len(files)):
     file_name = files[i]
     min_msgs = str(topics_and_num_msgs[file_name])
     actual_msgs = str(actual_topics_and_num_msgs[file_name])
-    files[i] = f"{file_name}:{min_msgs}:{actual_msgs}"
+    files[i] = f"{file_name}:{min_msgs}:{actual_msgs}:{config_path}"
 
 num_files = len(files)
 

@@ -6,6 +6,7 @@ RESTART_SIGNAL_PORT=$(yq e '.ports_to_reserve[1].life_restart_listener' $UELAUNC
 EXTRACTION_PORT=$(yq e '.ports_to_reserve[2].rosbag_extraction_listener' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 SESSIONROOT=$(yq e '.session.basename' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 SHOULD_EXTRACT=$(yq e '.ros.extract_bags' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+ROS_USE_DOCKER=$(yq e '.ros.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
 echo "Ending life $CURRLIFE"
 
@@ -29,7 +30,7 @@ if [ $SHOULD_EXTRACT == true ]; then
         eval $(parse_yaml $UELAUNCHER_HOME/config.yml)" C-m
 
     RUN_YOLO=$(yq e '.yolo.enable' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
-    YOLO_FULL_COMMAN=""
+    YOLO_FULL_COMMAND=""
     if [ $RUN_YOLO == true ]; then
         RUN_YOLO_DOCKER=$(yq e '.yolo.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
@@ -42,7 +43,7 @@ if [ $SHOULD_EXTRACT == true ]; then
     fi
 
     tmux send-keys -t $SESSIONNAME:Bags-Extract \
-        "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py $EXTRACTION_PORT $SESSIONNAME; \
+        "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py $EXTRACTION_PORT $SESSIONNAME $ROS_USE_DOCKER; \
         tmux kill-window -t $SESSIONNAME:ROS-Bags; \
         docker kill $SESSIONNAME-yolo; \
         $YOLO_FULL_COMMAND \
@@ -57,7 +58,11 @@ if [ $SHOULD_EXTRACT == true ]; then
     fi
 
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags
-    tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT" C-m
+    if [ $ROS_USE_DOCKER == true ]; then
+        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT" C-m
+    else
+        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" C-m
+    fi
 else
     echo "Not extracting bags"
     tmux kill-window -t $SESSIONNAME:ROS-Bags
