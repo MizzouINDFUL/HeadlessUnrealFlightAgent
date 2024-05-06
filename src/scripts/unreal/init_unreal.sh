@@ -18,10 +18,10 @@ fi
 if [ "$CUSTOM_UE_USER" != "" ]; then
     if [ ! -d /home/$CUSTOM_UE_USER ]; then
         mkdir /home/$CUSTOM_UE_USER
-        if [ ! -d /home/$CUSTOM_UE_USER/Documents ]; then
+    fi
+    if [ ! -d /home/$CUSTOM_UE_USER/Documents ]; then
             mkdir /home/$CUSTOM_UE_USER/Documents
             mkdir /home/$CUSTOM_UE_USER/Documents/AirSim
-        fi
     fi
 fi
 
