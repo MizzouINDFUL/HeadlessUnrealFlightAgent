@@ -5,21 +5,25 @@ import glob
 import os
 import yaml
 
+# Check if enough arguments are provided
+if len(sys.argv) < 3:
+    print("Not enough arguments provided.")
+
+config_path = "/config.yml"
+if len(sys.argv) >= 3:
+    config_path = sys.argv[2]
+
 print("Behavior of this agent: drone will get up and start moving backwards")
 port = 41451
 #if /config.yml exists, read the file and set the connection port
-if os.path.exists('/config.yml'):
-    with open('/config.yml', 'r') as file:
+if os.path.exists(config_path):
+    with open(config_path, 'r') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
         port = config["ports_to_reserve"][4]["airsim_api"]
         print(f"Port number found in the config file: {port}")
 else:
     print("Port number not found in the config file.")
     sys.exit(1)
-
-# Check if enough arguments are provided
-if len(sys.argv) < 3:
-    print("Not enough arguments provided.")
 
 # Connect to AirSim
 client = airsim.MultirotorClient(ip="", port=port)

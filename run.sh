@@ -55,10 +55,6 @@ if [ ! -d "$HOME_DIR/src/logs" ]; then
     mkdir $HOME_DIR/src/logs
 fi
 
-if [ -d "$HOME_DIR/bags/" ]; then
-    mkdir $HOME_DIR/bags/
-fi
-
 #check if ./bags/$SESSIONROOT exists. If it doesn't, create it
 if [ ! -d "$HOME_DIR/bags/$SESSIONROOT" ]; then
     mkdir $HOME_DIR/bags/$SESSIONROOT
@@ -106,7 +102,7 @@ if [ "$ENABLE_ROS" == true ]; then
         ROS_IMAGE=$(yq e '.ros.docker_image' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 
         tmux send-keys -t $SESSIONNAME:ROS "docker kill $SESSIONNAME-airsim-ros" C-m
-        tmux send-keys -t $SESSIONNAME:ROS "docker run -it --net host -e DISPLAY=$DISPLAY \
+        tmux send-keys -t $SESSIONNAME:ROS "docker run -it --net host \
         -v ./src/airsim-ros/shared:/root/shared \
         -v $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml:/config.yml \
         -v $UELAUNCHER_HOME/bags/$SESSIONROOT/:/session \
