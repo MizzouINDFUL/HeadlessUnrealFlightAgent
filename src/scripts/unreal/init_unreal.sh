@@ -4,7 +4,36 @@ eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 SKIP_PLUGINS_INSTALL=$(yq e '.session.skip_plugin_install' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 UNREAL_PROJECT_PATH=$(yq e '.unreal.project_path' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 CUSTOM_UE_USER=$(yq e '.unreal.user' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+SETTINGS_JSON_PATH="$UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/settings.json"
 UE_COMMAND_PREFIX=""
+
+#if ~/Documents/AirSim doesn't exist, create it
+if [ ! -d ~/Documents/AirSim ]; then
+    if [ ! -d ~/Documents ]; then
+        mkdir ~/Documents
+    fi
+    mkdir ~/Documents/AirSim
+fi
+
+if [ "$CUSTOM_UE_USER" != "" ]; then
+    if [ ! -d /home/$CUSTOM_UE_USER ]; then
+        mkdir /home/$CUSTOM_UE_USER
+        if [ ! -d /home/$CUSTOM_UE_USER/Documents ]; then
+            mkdir /home/$CUSTOM_UE_USER/Documents
+            mkdir /home/$CUSTOM_UE_USER/Documents/AirSim
+        fi
+    fi
+fi
+
+cp $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/settings.json ~/Documents/AirSim/settings.json
+chmod a+x ~/Documents/AirSim/settings.json
+python3 $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/set_airsim_port.py "$UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" "/root/Documents/AirSim/settings.json"
+if [ "$CUSTOM_UE_USER" != "" ]; then
+    cp ~/Documents/AirSim/settings.json /home/$CUSTOM_UE_USER/Documents/AirSim/settings.json
+fi
+
+echo "AirSim Settings:"
+cat ~/Documents/AirSim/settings.json
 
 if [ "$CUSTOM_UE_USER" != "" ]; then
     UE_COMMAND_PREFIX="sudo -u $CUSTOM_UE_USER"
@@ -64,6 +93,17 @@ if [ ! -f $unreal_local_path/Engine/Binaries/Linux/$EDITORNAME ]; then
     EDITORNAME="UnrealEditor-Linux-DebugGame"
 fi
 
+#Dockerfile edge case
+mkdir $UNREAL_PROJECT_PATH/Intermediate/ShaderAutogen
+chmod a+x $UNREAL_PROJECT_PATH/*
+
+if [ -d "/home/ue4" ]; then
+    mkdir /home/ue4/.config
+    chmod a+x /home/ue4/.config
+    chmod a+w /home/ue4/.config
+fi
+
 #in the project directory, there is a $SESSIONNAME-cmd.txt file that contains the arguments to be passed to 
 args=$(< $UNREAL_PROJECT_PATH/$SESSIONNAME-cmd.txt)
+echo "Running $EDITORNAME $uproject $args"
 $UE_COMMAND_PREFIX $unreal_local_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" $args

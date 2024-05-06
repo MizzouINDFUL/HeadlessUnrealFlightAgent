@@ -10,8 +10,10 @@ if len(sys.argv) < 3:
     print("Not enough arguments provided.")
 
 config_path = "/config.yml"
-if len(sys.argv) >= 3:
-    config_path = sys.argv[2]
+if len(sys.argv) > 3:
+    config_path = sys.argv[3]
+
+print("config file: " + config_path)
 
 print("Behavior of this agent: drone will get up and start moving backwards")
 port = 41451

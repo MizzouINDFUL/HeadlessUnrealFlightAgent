@@ -10,8 +10,6 @@ STORE_DATA_IN_BAGS=$(yq e '.ros.enable_rosbag' $UELAUNCHER_HOME/tmp/$SESSIONNAME
 ROS_USE_DOCKER=$(yq e '.ros.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 SESSION_ROOTFOLDER=$(yq e '.session.basename' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
-sleep 5;
-
 #create this window only if $simulation_start_airsim is true
 if [ $RUN_AIRSIM == true ]; then
     if [ $AIRSIM_USE_DOCKER == true ]; then
