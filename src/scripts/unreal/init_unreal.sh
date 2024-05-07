@@ -94,9 +94,10 @@ if [ ! -f $unreal_local_path/Engine/Binaries/Linux/$EDITORNAME ]; then
 fi
 
 #Dockerfile edge case
-mkdir $UNREAL_PROJECT_PATH/Intermediate/ShaderAutogen
-chmod a+x $UNREAL_PROJECT_PATH/*
-chmod a+w $UNREAL_PROJECT_PATH/*
+# mkdir $UNREAL_PROJECT_PATH/Intermediate/ShaderAutogen
+chmod 777 $UNREAL_PROJECT_PATH/*
+chmod 777 /home/ue4/UnrealEngine/Engine
+
 
 if [ -d "/home/ue4" ]; then
     mkdir /home/ue4/.config
