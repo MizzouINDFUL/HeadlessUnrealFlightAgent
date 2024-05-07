@@ -173,11 +173,11 @@ RUN sudo apt install -y python3-numpy &&\
 RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 # Create a setup script
-ADD setup.sh /root/setup.sh
+# ADD setup.sh /root/setup.sh
 
-# Set up .bashrc
-RUN cp /etc/skel/.bashrc /root/.bashrc
-RUN echo "source /root/setup.sh" >> /root/.bashrc
+# # Set up .bashrc
+# RUN cp /etc/skel/.bashrc /root/.bashrc
+# RUN echo "source /root/setup.sh" >> /root/.bashrc
 
 # COPY init-rosbridge.sh .
 
@@ -201,7 +201,8 @@ RUN . /opt/ros/noetic/setup.sh && \
     ln -s /Colosseum/ros /root/AirSim
 
 # Create a setup script
-ADD setup.sh /root/setup.sh
+RUN touch /root/setup.sh
+RUN echo "source /root/AirSim/ros/devel/setup.bash" >> /root/setup.sh
 
 # Set up .bashrc
 RUN cp /etc/skel/.bashrc /root/.bashrc
@@ -217,10 +218,13 @@ RUN cd /home && \
     cd HeadlessUnrealFlightAgent && \
     #remove the default config file - we expect users to link their own
     rm config.yml && \
+	rm Dockerfile && \
+	rm setup.sh && \
     mkdir bags && \
     mkdir /projects && \
     cp /home/HeadlessUnrealFlightAgent/src/airsim-ros/init-rosbridge.sh /init-rosbridge.sh && \
     chmod a+x /init-rosbridge.sh
+
 
 #Install tmux and yq
 RUN apt-get update && apt-get install -y tmux && \
