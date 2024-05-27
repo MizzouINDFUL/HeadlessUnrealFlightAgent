@@ -1,5 +1,5 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
-eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
+# eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 SKIP_PLUGINS_INSTALL=$(yq e '.session.skip_plugin_install' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 UNREAL_PROJECT_PATH=$(yq e '.unreal.project_path' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
@@ -21,13 +21,18 @@ if [ "$CUSTOM_UE_USER" != "" ]; then
     fi
     if [ ! -d /home/$CUSTOM_UE_USER/Documents ]; then
             mkdir /home/$CUSTOM_UE_USER/Documents
-            mkdir /home/$CUSTOM_UE_USER/Documents/AirSim
+    fi
+    if [ ! -d /home/$CUSTOM_UE_USER/Documents/AirSim ]; then
+        mkdir /home/$CUSTOM_UE_USER/Documents/AirSim
     fi
 fi
 
-cp $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/settings.json ~/Documents/AirSim/settings.json
+# cp $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/settings.json ~/Documents/AirSim/settings.json
+cp $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/settings.json $UELAUNCHER_HOME/tmp/$SESSIONNAME-airsim-settings.json
 chmod a+x ~/Documents/AirSim/settings.json
-python3 $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/set_airsim_port.py "$UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" "/root/Documents/AirSim/settings.json"
+chmod a+r ~/Documents/AirSim/settings.json
+python3 $UELAUNCHER_HOME/src/scripts/unreal/docker_scripts/set_airsim_port.py "$UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" "$UELAUNCHER_HOME/tmp/$SESSIONNAME-airsim-settings.json"
+mv $UELAUNCHER_HOME/tmp/$SESSIONNAME-airsim-settings.json ~/Documents/AirSim/settings.json
 if [ "$CUSTOM_UE_USER" != "" ]; then
     cp ~/Documents/AirSim/settings.json /home/$CUSTOM_UE_USER/Documents/AirSim/settings.json
 fi
@@ -42,10 +47,16 @@ fi
 if [ ! -d $UNREAL_PROJECT_PATH/Plugins ]; then
     mkdir $UNREAL_PROJECT_PATH/Plugins
 else
-    cp -r $UNREAL_PROJECT_PATH/Plugins $UNREAL_PROJECT_PATH/Plugins_original
+    mv $UNREAL_PROJECT_PATH/Plugins $UNREAL_PROJECT_PATH/Plugins_original
 fi
 
-if [ "$SKIP_PLUGINS_INSTALL" = false ]; then
+if [ $SKIP_PLUGINS_INSTALL != true ]; then
+
+    #ensure that Plugins folder exists
+    if [ ! -d $UNREAL_PROJECT_PATH/Plugins ]; then
+        mkdir $UNREAL_PROJECT_PATH/Plugins
+    fi
+
     #for each folder in $UELAUNCHER_HOME/src/plugins_link, link it to the project in $UNREAL_PROJECT_PATH/Plugins. force to replace existing links
     for PLUGIN in $(ls $UELAUNCHER_HOME/src/plugins_link)
     do
@@ -58,7 +69,7 @@ if [ "$SKIP_PLUGINS_INSTALL" = false ]; then
         fi
     done
 
-    #same, but cpoy plugins from plugins_copy instead of plugins_link and force to replace existing folders. use cp -r to copy the entire folder
+    #same, but copy plugins from plugins_copy instead of plugins_link and force to replace existing folders. use cp -r to copy the entire folder
     for PLUGIN in $(ls $UELAUNCHER_HOME/src/plugins_copy)
     do
         echo "Copying $PLUGIN"
@@ -85,27 +96,26 @@ unreal_project_name=${unreal_project_name%.*}
 #find uproject file
 uproject=$(find $uproject_path -name "*.uproject")
 
-$unreal_local_path/Engine/Build/BatchFiles/Linux/Build.sh $unreal_project_name"Editor" Linux DebugGame $uproject -IgnoreJunk -progress
+UNREAL_LOCAL_PATH=$(yq e '.unreal.local_path' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+
+$UNREAL_LOCAL_PATH/Engine/Build/BatchFiles/Linux/Build.sh $unreal_project_name"Editor" Linux DebugGame $uproject -IgnoreJunk -progress
 
 EDITORNAME="UE4Editor-Linux-DegubGame"
 #if UE4Editor doesn't exist, that means we are working with Unreal 5 and the file is called UnrealEditor
-if [ ! -f $unreal_local_path/Engine/Binaries/Linux/$EDITORNAME ]; then
+if [ ! -f $UNREAL_LOCAL_PATH/Engine/Binaries/Linux/$EDITORNAME ]; then
     EDITORNAME="UnrealEditor-Linux-DebugGame"
 fi
 
 #Dockerfile edge case
-# mkdir $UNREAL_PROJECT_PATH/Intermediate/ShaderAutogen
-chmod 777 $UNREAL_PROJECT_PATH/*
-chmod 777 /home/ue4/UnrealEngine/Engine
-
-
 if [ -d "/home/ue4" ]; then
     mkdir /home/ue4/.config
     chmod a+x /home/ue4/.config
     chmod a+w /home/ue4/.config
+    chmod 777 /home/ue4/UnrealEngine/Engine
+    chmod 777 $UNREAL_PROJECT_PATH/*
 fi
 
 #in the project directory, there is a $SESSIONNAME-cmd.txt file that contains the arguments to be passed to 
 args=$(< $UNREAL_PROJECT_PATH/$SESSIONNAME-cmd.txt)
 echo "Running $EDITORNAME $uproject $args"
-$UE_COMMAND_PREFIX $unreal_local_path/Engine/Binaries/Linux/$EDITORNAME "$uproject" $args
+$UE_COMMAND_PREFIX $UNREAL_LOCAL_PATH/Engine/Binaries/Linux/$EDITORNAME "$uproject" $args

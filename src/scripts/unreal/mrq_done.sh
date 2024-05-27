@@ -1,5 +1,5 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
-eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
+# eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 CURRLIFE=$(yq e '.current_life' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 RESTART_SIGNAL_PORT=$(yq e '.ports_to_reserve[1].life_restart_listener' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
@@ -18,7 +18,7 @@ tmux send-keys -t $SESSIONNAME:AirSim C-c
 sleep 0.2
 tmux kill-window -t $SESSIONNAME:AirSim
 
-sleep 2
+sleep 1
 
 if [ $SHOULD_EXTRACT == true ]; then
 
@@ -26,8 +26,7 @@ if [ $SHOULD_EXTRACT == true ]; then
 
     #create a new window called Bags-Extract in SIM session
     tmux new-window -t $SESSIONNAME -n Bags-Extract
-    tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh; \
-        eval $(parse_yaml $UELAUNCHER_HOME/config.yml)" C-m
+    tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh;" C-m
 
     RUN_YOLO=$(yq e '.yolo.enable' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
     YOLO_FULL_COMMAND=""

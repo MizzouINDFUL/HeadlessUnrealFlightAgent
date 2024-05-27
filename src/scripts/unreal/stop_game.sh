@@ -1,16 +1,18 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
-eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
+# eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 # previously we set life to an intermediate yml life: yq e '.current_life = 0' -i $HOME_DIR/tmp/$SESSIONNAME-config.yml
 CURRLIFE=$(yq e '.current_life' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+SIMULATION_TARGET_IS_TIME=$(yq e '.session.target_is_time' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+SIMULATION_TARGET=$(yq e '.session.target' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
 echo "stop_game script entrypint"
 
-if [ $simulation_target_is_time == true ]; then
-    echo "Ending life $CURRLIFE in $simulation_target seconds"
-    sleep $simulation_target
+if [ $SIMULATION_TARGET_IS_TIME == true ]; then
+    echo "Ending life $CURRLIFE in $SIMULATION_TARGET seconds"
+    sleep $SIMULATION_TARGET
 else
-    echo "Ending life $CURRLIFE after $simulation_target messages"
+    echo "Ending life $CURRLIFE after $SIMULATION_TARGET messages"
     while :
     do
         msg_count=$(docker exec -it $SESSIONNAME-airsim-ros /bin/bash -c "source /opt/ros/noetic/setup.bash; rostopic echo -n 1 /unreal_ros/message_count")
@@ -19,7 +21,7 @@ else
             msg_count=$(echo $msg_count | tr -d '\n')
             msg_count=$(echo $msg_count | sed 's/[^0-9]//g')
             echo "msg_count is $msg_count"
-            if [ $msg_count -ge $simulation_target ]; then
+            if [ $msg_count -ge $SIMULATION_TARGET ]; then
                 break
             fi
         else
@@ -54,8 +56,7 @@ if [ $simulation_extract_on_end == true ]; then
 
     #create a new window called Bags-Extract in SIM session
     tmux new-window -t $SESSIONNAME -n Bags-Extract
-    tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh; \
-        eval $(parse_yaml $UELAUNCHER_HOME/config.yml)" C-m
+    tmux send-keys -t $SESSIONNAME:Bags-Extract "source $UELAUNCHER_HOME/src/scripts/shared.sh" C-m
 
     tmux send-keys -t $SESSIONNAME:Bags-Extract \
         "python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/listen_extraction_requests.py $EXTRACTION_PORT; \
@@ -70,8 +71,8 @@ if [ $simulation_extract_on_end == true ]; then
         " C-m
 
     init_extraction_argument=""
-    if [ $simulation_target_is_time == false ]; then
-        init_extraction_argument="$simulation_target"
+    if [ $SIMULATION_TARGET_IS_TIME == false ]; then
+        init_extraction_argument="$SIMULATION_TARGET"
     fi
 
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags

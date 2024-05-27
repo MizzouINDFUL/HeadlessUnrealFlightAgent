@@ -1,5 +1,5 @@
 source $UELAUNCHER_HOME/src/scripts/shared.sh
-eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
+# eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 RESTART_SIGNAL_PORT=$(yq e '.ports_to_reserve[1].life_restart_listener' tmp/$SESSIONNAME-config.yml)
 python3 $UELAUNCHER_HOME/src/scripts/listen_restart_signal.py $RESTART_SIGNAL_PORT

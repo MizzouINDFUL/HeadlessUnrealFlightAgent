@@ -1,6 +1,5 @@
 THISFOLDER=$(dirname $(readlink -f $0))
 source $THISFOLDER/src/scripts/shared.sh
-eval $(parse_yaml $1)
 
 #if tmp folder doesnt exist, create it
 if [ ! -d "$HOME_DIR/tmp" ]; then
@@ -46,6 +45,8 @@ SIM_START_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 SESSIONROOT=$SESSIONBASENAME
 
 init_unreal_script="init_unreal.sh"
+
+unreal_use_docker=$(yq e '.unreal.use_docker' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 if [ $unreal_use_docker == true ]; then
     init_unreal_script="init_unreal_docker.sh"
 fi
@@ -92,7 +93,7 @@ tmux send-keys -t $SESSIONNAME:ROS "$EXPORT_COMMAND" C-m
 
 tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "tee -a $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
 tmux send-keys -t $SESSIONNAME:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
-bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
+# bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
 
 ROS_PORT=$(yq e '.ports_to_reserve[3].rosbridge_listener' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 ENABLE_ROS=$(yq e '.ros.enable' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
@@ -115,21 +116,45 @@ if [ "$ENABLE_ROS" == true ]; then
 
 fi
 
-bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/init_viewport_capture.sh
+# bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/init_viewport_capture.sh
 
-if [ $unreal_start_game == true ]; then
-    bind_script_to_event "VIEWPORT CAPTURE READY" $HOME_DIR/src/scripts/unreal/start_game.sh
-fi
+# if [ $unreal_start_game == true ]; then
+#     bind_script_to_event "VIEWPORT CAPTURE READY" $HOME_DIR/src/scripts/unreal/start_game.sh
+# fi
 
-#When "Bringing up level for play took" appears in the logs, launch unreal-launcher-airsim-ros docker
-bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/start_airsim_rosbag.sh
-bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/post_start_game.sh
+# #When "Bringing up level for play took" appears in the logs, launch unreal-launcher-airsim-ros docker
+# bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/start_airsim_rosbag.sh
+# bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/post_start_game.sh
 
-if [ $simulation_target -gt -1 ]; then
-    # bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/stop_game.sh true
-    bind_script_to_event "MRQ SIM FINISHED" $HOME_DIR/src/scripts/unreal/mrq_done.sh true
-    bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
-fi
+# if [ $simulation_target -gt -1 ]; then
+#     # bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/stop_game.sh true
+#     bind_script_to_event "MRQ SIM FINISHED" $HOME_DIR/src/scripts/unreal/mrq_done.sh true
+#     bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
+# fi
+
+
+# Iterate over each event/script pair in the YAML file
+CONFIG_FILE="$1"
+
+# Iterate over each event/script pair in the YAML file
+yq eval '.script_bindings[] | .event + " " + .script + " " + (.clear_logs_on_complete // "false")' "$CONFIG_FILE" | while IFS= read -r line; do
+    # Extract the event, script, and clear_logs_on_complete values using awk
+    event=$(echo "$line" | awk '{$(NF-1)=""; $(NF)=""; print $0}')
+    script=$(echo "$line" | awk '{print $(NF-1)}')
+    clear_logs_on_complete=$(echo "$line" | awk '{print $NF}')
+
+    # for some reason, awk leaves a space at the end of each event variable.
+    #removing the last symbol
+    event=${event%?}
+    event=${event%?}
+
+    # Bind the script to the event
+    bind_script_to_event "$event" "$script" "$clear_logs_on_complete"
+done
 
 tmux set -g mouse on
-tmux attach-session -t $SESSIONNAME:ROS
+
+AUTO_ATTACH=$(yq e '.session.auto_attach' $1)
+if [ $AUTO_ATTACH == true ]; then
+    tmux attach-session -t $SESSIONNAME:ROS
+fi

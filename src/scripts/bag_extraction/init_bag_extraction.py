@@ -33,6 +33,8 @@ if os.path.exists(config_path):
 
         is_running_from_container = config["ros"]["use_docker"]
 
+        port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
+
 topics = [key for x in yaml.safe_load_all(open('topics.yml')) for key in x]
 topic_names = [x['topic'] for x in topics]
 topics_and_num_msgs = {x['topic']: x['messages'] for x in topics}
@@ -90,6 +92,7 @@ num_files = len(files)
 files = ' '.join(files)
 
 print("sending the following topics: " + files)
+print("Target port " + str(port))
 
 #if files is empty, send 'skip'
 if files == '':

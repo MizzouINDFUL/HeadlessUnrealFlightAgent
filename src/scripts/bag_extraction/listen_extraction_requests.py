@@ -16,11 +16,14 @@ if len(sys.argv) > 2:
     SESSIONNAME = sys.argv[2]
 
 if len(sys.argv) > 3:
-    run_in_docker = sys.argv[3] == 'True'
+    run_in_docker = sys.argv[3].lower() == 'true'
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('localhost', port))
 s.listen(1)
+
+print("listenning at: " + str(port))
+
 num_topics = 0
 num_done = 0
 rosbag_done = False

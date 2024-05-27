@@ -2,7 +2,62 @@ FROM nvidia/opengl:1.2-glvnd-devel-ubuntu20.04
 
 #Install Unreal Engine 5.1
 #Credits: Official Unreal Engine Dockerfile https://github.com/EpicGames/UnrealEngine/blob/5.4/Engine/Extras/Containers/Dockerfiles/linux/dev/Dockerfile
-COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine /home/ue4/UnrealEngine
+# COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine /home/ue4/UnrealEngine
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Binaries/DotNET/ /home/ue4/UnrealEngine/Engine/Binaries/DotNET/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Binaries/Linux/ /home/ue4/UnrealEngine/Engine/Binaries/Linux/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Binaries/ThirdParty/ /home/ue4/UnrealEngine/Engine/Binaries/ThirdParty/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Build /home/ue4/UnrealEngine/Engine/Build
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Content/ /home/ue4/UnrealEngine/Engine/Content/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Source/ /home/ue4/UnrealEngine/Engine/Source/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Programs/ /home/ue4/UnrealEngine/Engine/Programs/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Extras/ /home/ue4/UnrealEngine/Engine/Extras/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Intermediate/ /home/ue4/UnrealEngine/Engine/Intermediate/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Config/ /home/ue4/UnrealEngine/Engine/Config/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Shaders/ /home/ue4/UnrealEngine/Engine/Shaders/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Platforms/ /home/ue4/UnrealEngine/Engine/Platforms/
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/DerivedDataCache/ /home/ue4/UnrealEngine/Engine/DerivedDataCache/
+
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/2D /home/ue4/UnrealEngine/Engine/Plugins/2D
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Animation /home/ue4/UnrealEngine/Engine/Plugins/Animation
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/AudioGameplayVolume /home/ue4/UnrealEngine/Engine/Plugins/AudioGameplayVolume
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Cameras /home/ue4/UnrealEngine/Engine/Plugins/Cameras
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Compression /home/ue4/UnrealEngine/Engine/Plugins/Compression
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Editor /home/ue4/UnrealEngine/Engine/Plugins/Editor
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/EnhancedInput /home/ue4/UnrealEngine/Engine/Plugins/EnhancedInput
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Experimental /home/ue4/UnrealEngine/Engine/Plugins/Experimental
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/FastBuildController /home/ue4/UnrealEngine/Engine/Plugins/FastBuildController
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Interchange /home/ue4/UnrealEngine/Engine/Plugins/Interchange
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/LightWeightInstancesEditor /home/ue4/UnrealEngine/Engine/Plugins/LightWeightInstancesEditor
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/MegascansPlugin /home/ue4/UnrealEngine/Engine/Plugins/MegascansPlugin
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Messaging /home/ue4/UnrealEngine/Engine/Plugins/Messaging
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/NetcodeUnitTest /home/ue4/UnrealEngine/Engine/Plugins/NetcodeUnitTest
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Performance /home/ue4/UnrealEngine/Engine/Plugins/Performance
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Protocols /home/ue4/UnrealEngine/Engine/Plugins/Protocols
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Runtime /home/ue4/UnrealEngine/Engine/Plugins/Runtime
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/ScriptPlugin /home/ue4/UnrealEngine/Engine/Plugins/ScriptPlugin
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Tests /home/ue4/UnrealEngine/Engine/Plugins/Tests
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/VirtualProduction /home/ue4/UnrealEngine/Engine/Plugins/VirtualProduction
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/XGEController /home/ue4/UnrealEngine/Engine/Plugins/XGEController
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/AI /home/ue4/UnrealEngine/Engine/Plugins/AI
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/AudioGameplay /home/ue4/UnrealEngine/Engine/Plugins/AudioGameplay
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/BlueprintFileUtils /home/ue4/UnrealEngine/Engine/Plugins/BlueprintFileUtils
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Compositing /home/ue4/UnrealEngine/Engine/Plugins/Compositing
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Developer /home/ue4/UnrealEngine/Engine/Plugins/Developer
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/EnginePlugin_A /home/ue4/UnrealEngine/Engine/Plugins/EnginePlugin_A
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Enterprise /home/ue4/UnrealEngine/Engine/Plugins/Enterprise
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/FX /home/ue4/UnrealEngine/Engine/Plugins/FX
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Importers /home/ue4/UnrealEngine/Engine/Plugins/Importers
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/JsonBlueprintUtilities /home/ue4/UnrealEngine/Engine/Plugins/JsonBlueprintUtilities
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Media /home/ue4/UnrealEngine/Engine/Plugins/Media
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/MeshPainting /home/ue4/UnrealEngine/Engine/Plugins/MeshPainting
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/MovieScene /home/ue4/UnrealEngine/Engine/Plugins/MovieScene
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Online /home/ue4/UnrealEngine/Engine/Plugins/Online
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Portal /home/ue4/UnrealEngine/Engine/Plugins/Portal
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/RenderGraphInsights /home/ue4/UnrealEngine/Engine/Plugins/RenderGraphInsights
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/ScriptGeneratorPlugin /home/ue4/UnrealEngine/Engine/Plugins/ScriptGeneratorPlugin
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Slate /home/ue4/UnrealEngine/Engine/Plugins/Slate
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/TraceUtilities /home/ue4/UnrealEngine/Engine/Plugins/TraceUtilities
+COPY --from=ghcr.io/epicgames/unreal-engine:dev-5.1.0 --chown=ue4:ue4 /home/ue4/UnrealEngine/Engine/Plugins/Web /home/ue4/UnrealEngine/Engine/Plugins/Web
 
 # Disable interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -217,7 +272,7 @@ RUN cd /home && \
     git clone https://github.com/MizzouINDFUL/HeadlessUnrealFlightAgent.git && \
     cd HeadlessUnrealFlightAgent && \
     #remove the default config file - we expect users to link their own
-    rm config.yml && \
+    # rm config.yml && \
 	rm Dockerfile && \
 	rm setup.sh && \
     mkdir bags && \

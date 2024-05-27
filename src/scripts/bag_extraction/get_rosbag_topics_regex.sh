@@ -2,7 +2,7 @@
 #for example, if the file names are: _unreal_ros_ground_truth.py, _unreal_ros_image_color.py, _unreal_ros_image_depth.py, this should output ((.*)unreal(.*)ground(.*)truth(.*)|(.*)unreal(.*)image(.*)color(.*)|(.*)unreal(.*)image(.*)depth(.*))
 
 source $UELAUNCHER_HOME/src/scripts/shared.sh
-eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
+# eval $(parse_yaml $UELAUNCHER_HOME/config.yml)
 
 #get all file names
 topics_regex=""

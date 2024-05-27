@@ -6,12 +6,11 @@ NODENAME=""
 if [ -n "$2" ]; then
     NODENAME=$2
     echo "rosbridge is going to use a custom node name: $NODENAME"
+    sed -i "s/name=\"rosbridge_tcp\"/name=\"rosbridge_tcp_$NODENAME\"/g" /opt/ros/noetic/share/rosbridge_server/launch/rosbridge_tcp.launch
+    sed -i "s/name=\"rosapi\"/name=\"rosapi_$NODENAME\"/g" /opt/ros/noetic/share/rosbridge_server/launch/rosbridge_tcp.launch
 else
     echo "rosbridge is going to use the default node name"
 fi
-
-sed -i "s/name=\"rosbridge_tcp\"/name=\"rosbridge_tcp_$NODENAME\"/g" /opt/ros/noetic/share/rosbridge_server/launch/rosbridge_tcp.launch
-sed -i "s/name=\"rosapi\"/name=\"rosapi_$NODENAME\"/g" /opt/ros/noetic/share/rosbridge_server/launch/rosbridge_tcp.launch
 
 
 source /opt/ros/noetic/setup.bash

@@ -1,69 +1,64 @@
---- # Config file for Unreal Launcher Flight Simulator
+---
+# Config file for Unreal Launcher Flight Simulator
 session:
- basename: "Blocks" #base name for a tmux session
- max: 10 #max number of tmux sessions with that basename - experimental stuff for parallel runs
- start_life: 1
- end_life: 4
- max_lives: 100
- skip_plgin_install: false
- auto_attach_tmux: false
-
+  basename: "Blocks" #base name for a tmux session
+  max: 10 #max number of tmux sessions with that basename - experimental stuff for parallel runs
+  start_life: 1
+  end_life: 4
+  max_lives: 100
+  skip_pulgin_install: false
+  auto_attach: true
+  target_is_time: false
+  target: 20
 unreal:
- separate_session: false #will open a separate tmux session for the editor instead of using the same one as the launcher. useful for debugging
- start_game: true #start game after launching the editor automatically
- use_docker: true #use docker to run the editor - otherwise will use the local copy of the engine
- docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
- local_path: "/home/mindful/EpicGames/UE5.1"
- project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
- actors_to_tag: "ASplineCar7:car"
- arguments: #arguments passed to UnrealEditor-Cmd.sh
-  - RenderOffscreen #render offscreen aka headless
-  - imgOutputX: 2048 #resolution of the output image
-  - imgOutputY: 1024
-  - logcmds: "LogDerivedDataCacheVerbose"
-  - layers_to_export: "/Engine/BufferVisualization/FinalImage.FinalImage+/MindfulPlugin/MRQ/MRQ_StencilMask.MRQ_StencilMask"
-  - topic_to_layer: "/unreal_ros/image_color:FinalImage+/unreal_ros/ground_truth_color:FinalImageMRQ_StencilMask"
-  - ground_truth: "ASplineCar7:car"
-  - num_frames: 20
-  - session_name: :{sessionname}
-  - tellunreal_listen_port: :{ports_to_reserve.tellunreal_listener}
-  - rosbridge_port: :{ports_to_reserve.rosbridge_listener}
-  # The following is the set of arguments you want to include when you want to "cache" the contents of Unreal project.
-  # This will speed up the simulation by not having to recompile shaders and other assets every time.
-  # - run: "DerivedDataCache"
-  # - fill
-  # - DDC: "CreatePak"
-
+  user: "" #useful for when the entire solutions is execcuted from inside a docker container. Unreal won't let you compile if you're root so you may use this to change to ue4 user
+  start_game: true #start game after launching the editor automatically
+  use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
+  docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
+  local_path: "/home/mindful/EpicGames/UE5.1"
+  project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
+  actors_to_tag: "ASplineCar7:car"
+  arguments: #arguments passed to UnrealEditor-Cmd.sh
+    - RenderOffscreen #render offscreen aka headless
+    - imgOutputX: 2048 #resolution of the output image
+    - imgOutputY: 1024
+    - logcmds: "LogDerivedDataCacheVerbose"
+    - layers_to_export: "/Engine/BufferVisualization/FinalImage.FinalImage+/MindfulPlugin/MRQ/MRQ_StencilMask.MRQ_StencilMask"
+    - topic_to_layer: "/unreal_ros/image_color:FinalImage+/unreal_ros/ground_truth_color:FinalImageMRQ_StencilMask"
+    - ground_truth: "ASplineCar7:car"
+    - num_frames: 20
+    - session_name: :{sessionname}
+    - tellunreal_listen_port: :{ports_to_reserve.tellunreal_listener}
+    - rosbridge_port: :{ports_to_reserve.rosbridge_listener}
+      # The following is the set of arguments you want to include when you want to "cache" the contents of Unreal project.
+      # This will speed up the simulation by not having to recompile shaders and other assets every time.
+      # - run: "DerivedDataCache"
+      # - fill
+      # - DDC: "CreatePak"
 simulation:
- outputSizeX: 2048
- outputSizeY: 1024
- store_in_bag: true
- start_airsim: true
- num_lives: 3
- target_is_time: false #if false, we count frames instead of seconds
- target: 20
- record_delay: 0 #delay before starting to record
- tags_to_track: "car"
- extract_on_end: true
-
+  start_airsim: true
+  num_lives: 3
+  target_is_time: false #if false, we count frames instead of seconds
+  target: 20
+  record_delay: 0 #delay before starting to record
+  tags_to_track: "car"
+  extract_on_end: true
 ros:
   enable: true
   use_docker: true
+  enable_rosbag: true
   extract_bags: true
-  docker_image: "unreal-launcher-ros"
+  docker_image: "unreal-launcher-airsim-ros"
   local_path: "/opt/ros/noetic/"
-
 #this one doesn't need to run anything specific locally but we assume you have access to AirSim's Python API on the host machine
 airsim:
   enable: true
   use_docker: true
-  docker_image: "unreal-launcher-ros"
-
+  docker_image: "unreal-launcher-airsim-ros"
 yolo:
   enable: false
   use_docker: true
   docker_image: "ultralytics/ultralytics"
-
 #a list of ports to reserve for the listeners
 ports_to_reserve:
   - tellunreal_listener
@@ -71,3 +66,17 @@ ports_to_reserve:
   - rosbag_extraction_listener
   - rosbridge_listener
   - airsim_api
+script_bindings:
+  - event: "External Command Line object is initialized"
+    script: "$UELAUNCHER_HOME/src/scripts/unreal/start_tellunreal.sh"
+  - event: "VIEWPORT CAPTURE READY"
+    script: "$UELAUNCHER_HOME/src/scripts/unreal/start_game.sh"
+  - event: "Bringing up level for play took"
+    script: "$UELAUNCHER_HOME/src/scripts/start_airsim_rosbag.sh"
+  - event: "Bringing up level for play took"
+    script: "$UELAUNCHER_HOME/src/scripts/unreal/post_start_game.sh"
+  - event: "MRQ SIM FINISHED"
+    script: "$UELAUNCHER_HOME/src/scripts/unreal/mrq_done.sh"
+    clear_logs_on_complete: true
+  - event: "Bringing up level for play took"
+    script: "$UELAUNCHER_HOME/src/scripts/listen_restart_signal.sh"
