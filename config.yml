@@ -10,6 +10,7 @@ session:
   auto_attach: true
   target_is_time: false
   target: 20
+
 unreal:
   user: "" #useful for when the entire solutions is execcuted from inside a docker container. Unreal won't let you compile if you're root so you may use this to change to ue4 user
   start_game: true #start game after launching the editor automatically
@@ -17,12 +18,13 @@ unreal:
   docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
   local_path: "/home/mindful/EpicGames/UE5.1"
   project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
-  actors_to_tag: "ASplineCar7:car"
+  # actors_to_tag: "ASplineCar7:car"
   arguments: #arguments passed to UnrealEditor-Cmd.sh
     - RenderOffscreen #render offscreen aka headless
     - imgOutputX: 2048 #resolution of the output image
     - imgOutputY: 1024
     - logcmds: "LogDerivedDataCacheVerbose"
+    - levels_to_load: "Level1+Level2"
     - layers_to_export: "/Engine/BufferVisualization/FinalImage.FinalImage+/MindfulPlugin/MRQ/MRQ_StencilMask.MRQ_StencilMask"
     - topic_to_layer: "/unreal_ros/image_color:FinalImage+/unreal_ros/ground_truth_color:FinalImageMRQ_StencilMask"
     - ground_truth: "ASplineCar7:car"
@@ -35,6 +37,7 @@ unreal:
       # - run: "DerivedDataCache"
       # - fill
       # - DDC: "CreatePak"
+      
 simulation:
   start_airsim: true
   num_lives: 3
@@ -66,17 +69,23 @@ ports_to_reserve:
   - rosbag_extraction_listener
   - rosbridge_listener
   - airsim_api
+
 script_bindings:
   - event: "External Command Line object is initialized"
     script: "$UELAUNCHER_HOME/src/scripts/unreal/start_tellunreal.sh"
+
   - event: "VIEWPORT CAPTURE READY"
     script: "$UELAUNCHER_HOME/src/scripts/unreal/start_game.sh"
+
   - event: "Bringing up level for play took"
     script: "$UELAUNCHER_HOME/src/scripts/start_airsim_rosbag.sh"
+
   - event: "Bringing up level for play took"
     script: "$UELAUNCHER_HOME/src/scripts/unreal/post_start_game.sh"
+
   - event: "MRQ SIM FINISHED"
     script: "$UELAUNCHER_HOME/src/scripts/unreal/mrq_done.sh"
     clear_logs_on_complete: true
+
   - event: "Bringing up level for play took"
     script: "$UELAUNCHER_HOME/src/scripts/listen_restart_signal.sh"
