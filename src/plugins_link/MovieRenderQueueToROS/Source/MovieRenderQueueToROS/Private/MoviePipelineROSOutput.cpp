@@ -4,6 +4,7 @@
 #include "MoviePipelineROSOutput.h"
 #include <cmath>
 #include "sensor_msgs/Image.h"
+#include "geometry_msgs/Pose.h"
 #include "RI/Topic.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -56,6 +57,8 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 	{
 		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Did not find session_name argument"));
 	}
+
+	
 
 	//iterate over the arguments passed to UnrealEditor-Cmd.sh
 	FString TopicArgs = "";
@@ -149,5 +152,31 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 
 		const bool PublishSuccess = ImageTopic->Publish(ImageMessage);
 		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Published Image to %s: %s"), *FinalTopicName, PublishSuccess ? TEXT("Success") : TEXT("Failed"));
+	}
+
+	//get player camera location and rotation to export Pose
+	APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	if(CameraManager)
+	{
+		FVector CameraLocation = CameraManager->GetCameraLocation();
+		FRotator CameraRotation = CameraManager->GetCameraRotation();
+
+		UTopic* PoseTopic = NewObject<UTopic>(UTopic::StaticClass());
+		const FString PoseTopicName = "/" + SessionName + "/unreal_ros/pose";
+		PoseTopic->Init(rosinst->ROSIntegrationCore, PoseTopicName, "geometry_msgs/Pose");
+		PoseTopic->Advertise();
+
+		TSharedPtr<ROSMessages::geometry_msgs::Pose> PoseMessage(new ROSMessages::geometry_msgs::Pose());
+		PoseMessage->position.x = CameraLocation.X;
+		PoseMessage->position.y = CameraLocation.Y;
+		PoseMessage->position.z = CameraLocation.Z;
+		PoseMessage->orientation = FQuat(CameraRotation).GetNormalized();
+
+		const bool PublishPoseSuccess = PoseTopic->Publish(PoseMessage);
+		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Published Pose to %s: %s"), *PoseTopicName, PublishPoseSuccess ? TEXT("Success") : TEXT("Failed"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("MoviePipelineROSOutput: Could not get CameraManager"));
 	}
 }

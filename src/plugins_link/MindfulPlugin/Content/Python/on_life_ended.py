@@ -2,6 +2,17 @@ import unreal
 import sys
 import time
 
+args = unreal.SystemLibrary.get_command_line()
+tokens, switches, params = unreal.SystemLibrary.parse_command_line(args)
+
+levels_to_load=""
+if "levels_to_load" in params:
+    levels_to_load = params["num_frames"]
+    unreal.log("num_frames: " + levels_to_load)
+    #spliut string using "+" separator
+    levels = levels_to_load.split("+")
+    unreal.EditorLibrary.load_level(levels[0])
+
 curr_life = int(sys.argv[1]) + 1
 total_lives = int(sys.argv[2])
 

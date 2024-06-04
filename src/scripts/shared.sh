@@ -54,7 +54,7 @@ function bind_script_to_event {
    CLEARLOG=false
 
    if [ ! -z "$3" ]; then
-      if [ "$3" == "true" ]; then
+      if [ "$3" == true ]; then
          CLEARLOG=true
       fi
    fi
@@ -70,17 +70,12 @@ function bind_script_to_event {
    #focus on the initial pane of the orchestrator window + split it vertically and run the script in the new pane
    sleep 0.05
 
-   #ddo split-window -h if there is only one pane, otherwise do split-window -v
-
-   # tmux send-keys -t $SESSIONNAME:Orchestrator "export SESSIONNAME=$SESSIONNAME" Enter
-   # tmux send-keys -t $SESSIONNAME:Orchestrator "export UELAUNCHER_HOME=$UELAUNCHER_HOME" Enter
    tmux send-keys -t $SESSIONNAME:Orchestrator "tmux split-window -h" Enter
 
    sleep 0.2
-   # tmux send-keys -t $SESSIONNAME:Orchestrator "tmux rename-window -t \$TMUX_PANE $PANENAME" Enter
    tmux send-keys -t $SESSIONNAME:Orchestrator "export SESSIONNAME=$SESSIONNAME" Enter
    tmux send-keys -t $SESSIONNAME:Orchestrator "export UELAUNCHER_HOME=$UELAUNCHER_HOME" Enter
-   tmux send-keys -t $SESSIONNAME:Orchestrator "$UELAUNCHER_HOME/src/scripts/unreal/unreal_tracker.sh \"$1\" \"$2\" \"$CLEARLOG\"" Enter
+   tmux send-keys -t $SESSIONNAME:Orchestrator "$UELAUNCHER_HOME/src/scripts/unreal/unreal_tracker.sh '$1' $2 $CLEARLOG" Enter
    sleep 0.1
    #switch focus back to the first pane
    tmux select-pane -t $SESSIONNAME:Orchestrator.0

@@ -132,24 +132,15 @@ fi
 #     bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
 # fi
 
+TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $1)
 
-# Iterate over each event/script pair in the YAML file
-CONFIG_FILE="$1"
+for ((i=0; i<$TOTAL_CALLS; i++))
+do
+    event=$(python3 src/scripts/get_call_args.py $1 $i 0)
+    script=$(python3 src/scripts/get_call_args.py $1 $i 1)
+    clear_logs=$(python3 src/scripts/get_call_args.py $1 $i 2)
 
-# Iterate over each event/script pair in the YAML file
-yq eval '.script_bindings[] | .event + " " + .script + " " + (.clear_logs_on_complete // "false")' "$CONFIG_FILE" | while IFS= read -r line; do
-    # Extract the event, script, and clear_logs_on_complete values using awk
-    event=$(echo "$line" | awk '{$(NF-1)=""; $(NF)=""; print $0}')
-    script=$(echo "$line" | awk '{print $(NF-1)}')
-    clear_logs_on_complete=$(echo "$line" | awk '{print $NF}')
-
-    # for some reason, awk leaves a space at the end of each event variable.
-    #removing the last symbol
-    event=${event%?}
-    event=${event%?}
-
-    # Bind the script to the event
-    bind_script_to_event "$event" "$script" "$clear_logs_on_complete"
+    bind_script_to_event "$event" $script $clear_logs
 done
 
 tmux set -g mouse on

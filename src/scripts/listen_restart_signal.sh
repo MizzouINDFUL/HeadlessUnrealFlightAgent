@@ -19,11 +19,23 @@ else
     yq e ".current_life = $CURR_LIFE" -i $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml
 
     tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py run_mrq.py $CURR_LIFE'" C-m
-    bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/start_airsim_rosbag.sh
-    bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/listen_restart_signal.sh
-    bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/unreal/post_start_game.sh
-    bind_script_to_event "MRQ SIM FINISHED" $UELAUNCHER_HOME/src/scripts/unreal/mrq_done.sh true
-    # bind_script_to_event "Bringing up level for play took" $UELAUNCHER_HOME/src/scripts/unreal/stop_game.sh true
+
+    TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+
+    echo "Found $TOTAL_CALLS scripts to bind in the config file"
+
+    for ((i=0; i<$TOTAL_CALLS; i++))
+    do
+        event=$(python3 src/scripts/get_call_args.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml $i 0)
+        script=$(python3 src/scripts/get_call_args.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml $i 1)
+        clear_logs=$(python3 src/scripts/get_call_args.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml $i 2)
+        should_bind=$(python3 src/scripts/get_call_args.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml $i 3)
+
+        if [ "$should_bind" == true ]; then
+            bind_script_to_event "$event" $script $clear_logs
+        fi
+    done
+
 fi
 
 sleep 8
