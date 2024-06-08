@@ -45,7 +45,6 @@ SIM_START_DATE=$(date +%Y-%m-%d_%H-%M-%S)
 SESSIONROOT=$SESSIONBASENAME
 
 init_unreal_script="init_unreal.sh"
-
 unreal_use_docker=$(yq e '.unreal.use_docker' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 if [ $unreal_use_docker == true ]; then
     init_unreal_script="init_unreal_docker.sh"
@@ -116,24 +115,9 @@ if [ "$ENABLE_ROS" == true ]; then
 
 fi
 
-# bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/init_viewport_capture.sh
-
-# if [ $unreal_start_game == true ]; then
-#     bind_script_to_event "VIEWPORT CAPTURE READY" $HOME_DIR/src/scripts/unreal/start_game.sh
-# fi
-
-# #When "Bringing up level for play took" appears in the logs, launch unreal-launcher-airsim-ros docker
-# bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/start_airsim_rosbag.sh
-# bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/post_start_game.sh
-
-# if [ $simulation_target -gt -1 ]; then
-#     # bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/unreal/stop_game.sh true
-#     bind_script_to_event "MRQ SIM FINISHED" $HOME_DIR/src/scripts/unreal/mrq_done.sh true
-#     bind_script_to_event "Bringing up level for play took" $HOME_DIR/src/scripts/listen_restart_signal.sh
-# fi
-
+#this will read through the events that have to be listened in Unreal's log file and bind them to the scripts that have to be run
+#Note that src/scripts/listen_restart_signal.sh uses a similar piece of code to rebind scripts to the same events if auto_rebind_after_each_life is set to true
 TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $1)
-
 for ((i=0; i<$TOTAL_CALLS; i++))
 do
     event=$(python3 src/scripts/get_call_args.py $1 $i 0)
@@ -142,6 +126,16 @@ do
 
     bind_script_to_event "$event" $script $clear_logs
 done
+
+# TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $1)
+# for ((i=0; i<$TOTAL_CALLS; i++))
+# do
+#     event=$(python3 src/scripts/get_call_args.py $1 $i 0)
+#     script=$(python3 src/scripts/get_call_args.py $1 $i 1)
+#     clear_logs=$(python3 src/scripts/get_call_args.py $1 $i 2)
+
+#     bind_script_to_event "$event" $script $clear_logs
+# done
 
 tmux set -g mouse on
 

@@ -12,13 +12,16 @@ if [ $CURR_LIFE -ge $MAX_LIVES ]; then
     tmux kill-session -t $SESSIONNAME
 else
     echo "Simulation is restarting"
-    tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py on_life_ended.py $CURR_LIFE $simulation_num_lives'" C-m
+    TELLUNREAL_PORT=$(yq e '.ports_to_reserve[0].tellunreal_listener' tmp/$SESSIONNAME-config.yml)
+    python3 src/scripts/unreal/send_to_unreal.py $TELLUNREAL_PORT "py on_life_ended.py $CURR_LIFE $simulation_num_lives"
     sleep 3;
 
     CURR_LIFE=$(($CURR_LIFE+1))
     yq e ".current_life = $CURR_LIFE" -i $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml
 
-    tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py run_mrq.py $CURR_LIFE'" C-m
+    # tmux send-keys -t $SESSIONNAME:tellunreal "tellunreal 'py run_mrq.py $CURR_LIFE'" C-m
+    tellunreal_command="py print('BEGIN EXPERIMENT')"
+    python3 src/scripts/unreal/send_to_unreal.py $TELLUNREAL_PORT "$tellunreal_command"
 
     TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 

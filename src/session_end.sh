@@ -7,8 +7,25 @@ echo "QUIT_EDITOR" > $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/comma
 sleep 0.5
 echo "" > $UELAUNCHER_HOME/src/plugins_link/CommandLineExternal/command.txt
 
-docker kill $SESSIONNAME-ros; docker kill $SESSIONNAME-airsim-ros; docker kill $SESSIONNAME-yolo;
+ENABLE_ROS=$(yq e '.ros.enable' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+if [ "$ENABLE_ROS" == true ]; then
+    ROS_USE_DOCKER=$(yq e '.ros.use_docker' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+    if [ $ROS_USE_DOCKER == true ]; then
+        docker stop $SESSIONNAME-airsim-ros
+        docker rm $SESSIONNAME-airsim-ros
+    fi
+fi
 
+ENABLE_YOLO=$(yq e '.yolo.enable' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+if [ "$ENABLE_YOLO" == true ]; then
+    YOLO_USE_DOCKER=$(yq e '.yolo.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+    if [ $YOLO_USE_DOCKER == true ]; then
+        docker stop $SESSIONNAME-yolo
+        docker rm $SESSIONNAME-yolo
+    fi
+fi
+
+unreal_use_docker=$(yq e '.unreal.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 if [ $unreal_use_docker == true ]; then
     docker stop $SESSIONNAME-unreal
     docker rm $SESSIONNAME-unreal
