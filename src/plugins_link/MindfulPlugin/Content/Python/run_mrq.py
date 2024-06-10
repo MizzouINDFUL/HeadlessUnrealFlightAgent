@@ -79,17 +79,12 @@ def OnQueueFinished(params, success):
 subsystem = unreal.get_editor_subsystem(unreal.MoviePipelineQueueSubsystem)
 pipelineQueue = subsystem.get_queue()
 
-
-
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 lvl_ref = unreal.SoftObjectPath(unreal.SystemLibrary.conv_soft_object_reference_to_string(les.get_current_level()).split(":")[0])
 
 asset_reg = unreal.AssetRegistryHelpers.get_asset_registry()
 config_asset = asset_reg.get_asset_by_object_path('/MindfulPlugin/MRQ/MindfulMRQConfig.MindfulMRQConfig')
 config_ref = config_asset.get_asset()
-
-if num_frames > 0:
-    asset_reg.get_asset_by_object_path('/MindfulPlugin/MRQ/MindfulSceneCaptureLS.MindfulSceneCaptureLS').get_asset().set_playback_end(num_frames)
 
 job = pipelineQueue.allocate_new_job(unreal.MoviePipelineExecutorJob)
 job.job_name = "MRQ SIM"
@@ -120,8 +115,12 @@ if layersToExport != "":
 
             if not already_added:
                 unreal.log("Adding layer: " + layer)
-                def_layer.additional_post_process_materials.append(new_pass)
+                job.get_configuration().find_or_add_setting_by_class(unreal.MoviePipelineDeferredPassBase).additional_post_process_materials.append(new_pass)
 
+if num_frames > -1:
+    job.get_configuration().find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting).use_custom_frame_rate  = False
+    job.get_configuration().find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting).use_custom_playback_range = True
+    job.get_configuration().find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting).custom_end_frame = num_frames
 
 if overrideResX > 0 and overrideResY > 0:
     outputSetting.output_resolution = unreal.IntPoint(overrideResX, overrideResY)

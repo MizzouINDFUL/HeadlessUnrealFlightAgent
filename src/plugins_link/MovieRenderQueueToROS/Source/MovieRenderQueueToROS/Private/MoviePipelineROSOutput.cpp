@@ -115,6 +115,9 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 	{
 
 		const FString TopicName = RenderPassToTopicMap.Contains(Pass.Name) ? RenderPassToTopicMap[Pass.Name] : Pass.Name;
+
+		//Log Pass Name
+		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Pass Name: %s"), *Pass.Name);
 		
 
 		TUniquePtr<FImagePixelData>& PixelData = InMergedOutputFrame->ImageOutputData[Pass];

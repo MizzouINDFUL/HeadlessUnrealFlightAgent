@@ -13,7 +13,7 @@ if len(sys.argv) > 3:
 
 print("config file: " + config_path)
 
-print("Behavior of this agent: drone will get up and start moving backwards")
+print("Behavior of this agent: drone will get up and start in a grid search pattern.")
 port = 41451
 #if /config.yml exists, read the file and set the connection port
 if os.path.exists(config_path):
