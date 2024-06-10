@@ -9,6 +9,9 @@ STORE_DATA_IN_BAGS=$(yq e '.ros.enable_rosbag' $UELAUNCHER_HOME/tmp/$SESSIONNAME
 ROS_USE_DOCKER=$(yq e '.ros.use_docker' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 SESSION_ROOTFOLDER=$(yq e '.session.basename' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
+echo "Starting AirSim with $LIFE_NUM lives and $MAX_LIVES max lives";
+sleep 5;
+
 if [ $RUN_AIRSIM == true ]; then
     if [ $AIRSIM_USE_DOCKER == true ]; then
         tmux new-window -t $SESSIONNAME -n AirSim "docker exec -ti $SESSIONNAME-airsim-ros bash -c \"~/shared/start_tmux_windows.sh $LIFE_NUM $MAX_LIVES \"; exec bash";

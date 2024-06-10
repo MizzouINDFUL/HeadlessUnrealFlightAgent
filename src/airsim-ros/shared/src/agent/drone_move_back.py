@@ -28,14 +28,15 @@ else:
 # Connect to AirSim
 client = airsim.MultirotorClient(ip="", port=port)
 client.confirmConnection()
+client.enableApiControl(True)
 
-speed = 5  # Speed of movement
-move_up_distance = 10  # Distance to move up
+speed = 10  # Speed of movement
+move_up_distance = 80  # Distance to move up
 
 # Define the volume boundaries and step size
 x_min, x_max, x_step = -50, 50, 10
 y_min, y_max, y_step = -50, 50, 10
-z = -move_up_distance  # Altitude
+z_min, z_max, z_step = -50, 50, 10
 
 # Take off
 client.takeoffAsync().join()
@@ -46,8 +47,9 @@ client.moveByVelocityAsync(0, 0, -speed, duration=move_up_distance / speed).join
 # Perform the grid search
 for x in range(x_min, x_max, x_step):
     for y in range(y_min, y_max, y_step):
-        # Move to the next point in the grid
-        client.moveToPositionAsync(x, y, z, speed).join()
+        for z in range(z_min, z_max, z_step):
+            # Move to the next point in the grid
+            client.moveToPositionAsync(x, y, z, speed).join()
 
 # Land
 client.landAsync().join()

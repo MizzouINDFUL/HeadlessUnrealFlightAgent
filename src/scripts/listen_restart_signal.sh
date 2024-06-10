@@ -7,7 +7,7 @@ python3 $UELAUNCHER_HOME/src/scripts/listen_restart_signal.py $RESTART_SIGNAL_PO
 CURR_LIFE=$(yq e '.current_life' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 MAX_LIVES=$(yq e '.session.end_life' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
 
-if [ $CURR_LIFE -ge $MAX_LIVES ]; then
+if [ $CURR_LIFE -ge $MAX_LIVES ] && [ $MAX_LIVES != -1 ]; then
     echo "Simulation has ended"
     tmux kill-session -t $SESSIONNAME
 else

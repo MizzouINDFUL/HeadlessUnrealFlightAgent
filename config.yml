@@ -96,7 +96,7 @@ script_bindings:
 
   #This is right after we confirm that the game has started
   "Bringing up level for play took":
-    - script: "src/scripts/unreal/start_airsim.sh"
+    - script: "src/scripts/start_airsim.sh"
       clear_logs_on_complete: false
       auto_rebind_after_each_life: true
     - script: "src/scripts/unreal/post_start_game.sh"

@@ -62,3 +62,4 @@ fi
 
 rm $UELAUNCHER_HOME/src/logs/$SIM_START_DATE-Unreal.log
 rm $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml
+rm $UELAUNCHER_HOME/tmp/$SIM_START_DATE-Unreal.log
