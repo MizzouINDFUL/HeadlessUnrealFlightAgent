@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MoviePipelineImageSequenceOutput.h"
+#include "CineCameraComponent.h"
 #include "MoviePipelineROSOutput.generated.h"
 
 /**
@@ -36,4 +37,5 @@ public:
 private:
 	void RGBAtoRGB(uint8* inRGBA, uint8* outRGB, int32 Width, int32 Height);
 	void RGBtoBGR(uint8* Data, int32 Width, int32 Height);
+	UCineCameraComponent* TryGetCineCameraComponent();
 };

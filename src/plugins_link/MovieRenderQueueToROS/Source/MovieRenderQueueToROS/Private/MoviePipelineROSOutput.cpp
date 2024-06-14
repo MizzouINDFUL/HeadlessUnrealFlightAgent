@@ -4,12 +4,14 @@
 #include "MoviePipelineROSOutput.h"
 #include <cmath>
 #include "sensor_msgs/Image.h"
+#include "std_msgs/String.h"
 #include "geometry_msgs/Pose.h"
 #include "RI/Topic.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MoviePipeline.h"
 #include "MoviePipelineImageQuantization.h"
+#include "CineCameraActor.h"
 #include "ROSIntegrationGameInstance.h"
 
 void UMoviePipelineROSOutput::RGBAtoRGB(uint8* inRGBA, uint8* outRGB, int32 Width, int32 Height)
@@ -40,6 +42,48 @@ void UMoviePipelineROSOutput::RGBtoBGR(uint8* Data, int32 Width, int32 Height)
 	}
 }
 
+UCineCameraComponent* UMoviePipelineROSOutput::TryGetCineCameraComponent()
+{
+	//get player pawn
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if(PlayerPawn)
+	{
+		//Iterate through components of player pawn
+		for (UActorComponent* ActorComponent : PlayerPawn->GetComponents())
+		{
+			UCineCameraComponent* CineCameraComponent = Cast<UCineCameraComponent>(ActorComponent);
+			if(CineCameraComponent)
+			{
+				//check if this is an active camera
+				if(CineCameraComponent->IsActive())
+				{
+					return CineCameraComponent;
+				}
+			}
+		}
+	}
+
+	//find all CineCameraActors
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(this, ACineCameraActor::StaticClass(), FoundActors);
+
+	//iterate through them and look at their CineCameraComponent. If any of those is active - return it
+	for (AActor* Actor : FoundActors)
+	{
+		ACineCameraActor* CineCameraActor = Cast<ACineCameraActor>(Actor);
+		if(CineCameraActor)
+		{
+			UCineCameraComponent* CineCameraComponent = CineCameraActor->GetCineCameraComponent();
+			if(CineCameraComponent && CineCameraComponent->IsActive())
+			{
+				return CineCameraComponent;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputFrame* InMergedOutputFrame)
 {
 	Super::OnReceiveImageDataImpl(InMergedOutputFrame);
@@ -58,7 +102,8 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Did not find session_name argument"));
 	}
 
-	
+	float TargetHeight = 0.0f;
+	float TargetWidth = 0.0f;
 
 	//iterate over the arguments passed to UnrealEditor-Cmd.sh
 	FString TopicArgs = "";
@@ -126,6 +171,9 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 		int64 SizeBytes = 0;
 		QuantizedPixelData->GetRawData(RawData, SizeBytes);
 
+		if(TargetWidth == 0) TargetWidth = PixelData->GetSize().X;
+		if(TargetHeight == 0) TargetHeight = PixelData->GetSize().Y;
+
 		uint8* BGR = new uint8[PixelData->GetSize().X * PixelData->GetSize().Y * 3];
 		const FColor *itI = (FColor*)RawData;
 		uint8_t *itO = BGR;
@@ -161,22 +209,60 @@ void UMoviePipelineROSOutput::OnReceiveImageDataImpl(FMoviePipelineMergerOutputF
 	APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	if(CameraManager)
 	{
+		//Current Camera Transform
 		FVector CameraLocation = CameraManager->GetCameraLocation();
 		FRotator CameraRotation = CameraManager->GetCameraRotation();
 
-		UTopic* PoseTopic = NewObject<UTopic>(UTopic::StaticClass());
-		const FString PoseTopicName = "/" + SessionName + "/unreal_ros/pose";
-		PoseTopic->Init(rosinst->ROSIntegrationCore, PoseTopicName, "geometry_msgs/Pose");
-		PoseTopic->Advertise();
+		FVector FwdVector = UKismetMathLibrary::GetForwardVector(CameraRotation);
+		FVector UpVector = UKismetMathLibrary::GetUpVector(CameraRotation);
 
-		TSharedPtr<ROSMessages::geometry_msgs::Pose> PoseMessage(new ROSMessages::geometry_msgs::Pose());
-		PoseMessage->position.x = CameraLocation.X;
-		PoseMessage->position.y = CameraLocation.Y;
-		PoseMessage->position.z = CameraLocation.Z;
-		PoseMessage->orientation = FQuat(CameraRotation).GetNormalized();
+		UTopic* StringTopic = NewObject<UTopic>(UTopic::StaticClass());
+		const FString StringTopicName = "/" + SessionName + "/unreal_ros/camera_position";
+		StringTopic->Init(rosinst->ROSIntegrationCore, StringTopicName, "std_msgs/String");
+		StringTopic->Advertise();
 
-		const bool PublishPoseSuccess = PoseTopic->Publish(PoseMessage);
-		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Published Pose to %s: %s"), *PoseTopicName, PublishPoseSuccess ? TEXT("Success") : TEXT("Failed"));
+		FString JsonString = FString::Printf(TEXT("{\"annotations\": [ { \"CamVecStraight_XYZ\": [ %.3f, %.3f, %.3f ], \"CamVecUp_XYZ\": [ %.3f, %.3f, %.3f ], \"cPitch\": %.3f, \"cRoll\": %.3f, \"cX\": %.3f, \"cY\": %.3f, \"cYaw\": %.3f, \"cZ\": %.3f } ] }"),
+			FwdVector.X, FwdVector.Y, FwdVector.Z,
+			UpVector.X, UpVector.Y, UpVector.Z,
+			CameraRotation.Pitch, CameraRotation.Roll,
+			CameraLocation.X, CameraLocation.Y, CameraRotation.Yaw, CameraLocation.Z);
+
+		TSharedPtr<ROSMessages::std_msgs::String> StringMessage(new ROSMessages::std_msgs::String(JsonString));
+
+		const bool PublishStringSuccess = StringTopic->Publish(StringMessage);
+		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Published Camera Transform String to %s: %s"), *StringTopicName, PublishStringSuccess ? TEXT("Success") : TEXT("Failed"));
+	
+		//General Camera Info
+		//only do it if player is using a cineCameraComponent
+		UCineCameraComponent* CineCameraComponent = TryGetCineCameraComponent();
+		if (!CineCameraComponent)
+		{
+			UE_LOG(LogTemp, Error, TEXT("MoviePipelineROSOutput: Could not get CineCameraComponent"));
+			return;
+		}
+
+		UTopic* CameraInfoTopic = NewObject<UTopic>(UTopic::StaticClass());
+		const FString CameraInfoTopicName = "/" + SessionName + "/unreal_ros/camera_info";
+		CameraInfoTopic->Init(rosinst->ROSIntegrationCore, CameraInfoTopicName, "std_msgs/String");
+		CameraInfoTopic->Advertise();
+
+		float FOV = CameraManager->GetFOVAngle();
+		float FocusDistance = CineCameraComponent->CurrentFocusDistance;
+		float FocalLength = CineCameraComponent->CurrentFocalLength;
+		float ImageH = TargetHeight;
+		float ImageW = TargetWidth;
+		float PixelAspectRatio = ImageW / ImageH;
+		float SensorHeight = CineCameraComponent->Filmback.SensorHeight;
+		float SensorWidth = CineCameraComponent->Filmback.SensorWidth;
+		float SensorAspectRatio = CineCameraComponent->Filmback.SensorAspectRatio;
+
+		FString CameraInfoJsonString = FString::Printf(TEXT("{\"FOV\": %.6f, \"FocalDistance\": %.1f, \"FocalLength\": %.6f, \"ImageHeight\": %.1f, \"ImageWidth\": %.1f, \"PixelAspectRatio\": %.1f, \"SensorAspectRatio\": %.6f, \"SensorHeight\": %.6f, \"SensorWidth\": %.6f, \"Spectrum\": \"RGB\", \"Version\": \"Full_Sim_V1\"}"),
+			FOV, FocusDistance, FocalLength, ImageH, ImageW, PixelAspectRatio, SensorAspectRatio, SensorHeight, SensorWidth);
+
+		TSharedPtr<ROSMessages::std_msgs::String> CameraInfoMessage(new ROSMessages::std_msgs::String(CameraInfoJsonString));
+
+		const bool PublishCameraInfoSuccess = CameraInfoTopic->Publish(CameraInfoMessage);
+		UE_LOG(LogTemp, Warning, TEXT("MoviePipelineROSOutput: Published Camera Info String to %s: %s"), *CameraInfoTopicName, PublishCameraInfoSuccess ? TEXT("Success") : TEXT("Failed"));
 	}
 	else
 	{
