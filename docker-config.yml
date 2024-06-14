@@ -1,7 +1,7 @@
 ---
 # Config file for Unreal Launcher Flight Simulator
 session:
-  basename: "Blocks" #base name for a tmux session
+  basename: "BlocksDocker" #base name for a tmux session
   max: 10 #max number of tmux sessions with that basename - experimental stuff for parallel runs
   start_life: 1
   end_life: 1
@@ -17,8 +17,8 @@ unreal:
   use_mrq: true #use movie render queue instead of a regular Play In Editor session
   use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
   docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
-  local_path: "/home/mindful/EpicGames/UE5.1"
-  project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
+  local_path: "/home/ue4/UnrealEngine"
+  project_path: "/home/ue4/UnrealProjects/Blocks"
 
   arguments: #arguments passed to UnrealEditor-Cmd.sh
     - RenderOffscreen #render offscreen aka headless
@@ -29,7 +29,7 @@ unreal:
     - layers_to_export: "/Engine/BufferVisualization/FinalImage.FinalImage+/MindfulPlugin/MRQ/MRQ_StencilMask.MRQ_StencilMask+/Engine/BufferVisualization/SceneDepth.SceneDepth"
     - topic_to_layer: "/unreal_ros/image_color:FinalImage+/unreal_ros/ground_truth_color:FinalImageMRQ_StencilMask+/unreal_ros/image_depth:FinalImageSceneDepth"
     - ground_truth: "ASplineCar7:car"
-    - num_frames: 24
+    - num_frames: 20
     - session_name: :{sessionname}
     - tellunreal_listen_port: :{ports_to_reserve.tellunreal_listener}
     - rosbridge_port: :{ports_to_reserve.rosbridge_listener}
@@ -50,7 +50,7 @@ simulation:
   extract_on_end: true
 ros:
   enable: true
-  use_docker: true
+  use_docker: false
   enable_rosbag: true
   extract_bags: true
   docker_image: "unreal-launcher-airsim-ros"
@@ -59,7 +59,7 @@ ros:
 #this one doesn't need to run anything specific locally (hence no 'local_path' option here) but we assume you have access to AirSim's Python API on the host machine
 airsim:
   enable: true
-  use_docker: true
+  use_docker: false
   docker_image: "unreal-launcher-airsim-ros"
   lawn_mower_height: 35
   lawn_mower_speed: 5

@@ -117,5 +117,10 @@ fi
 
 #in the project directory, there is a $SESSIONNAME-cmd.txt file that contains the arguments to be passed to 
 args=$(< $UNREAL_PROJECT_PATH/$SESSIONNAME-cmd.txt)
+
+#append config path to args
+# -sim_config
+args="$args -sim_config=$UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml"
+
 echo "Running $EDITORNAME $uproject $args"
 $UE_COMMAND_PREFIX $UNREAL_LOCAL_PATH/Engine/Binaries/Linux/$EDITORNAME "$uproject" $args

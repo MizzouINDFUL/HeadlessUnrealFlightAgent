@@ -40,5 +40,9 @@ unreal_project_name=${unreal_project_name%.*}
 
 args=$(< /cmd.txt)
 
+#append config path to the arguments
+# -sim_config
+args="$args -sim_config=/config.yml"
+
 /home/ue4/UnrealEngine/Engine/Build/BatchFiles/Linux/Build.sh $unreal_project_name"Editor" Linux DebugGame /project/$unreal_project_name.uproject -IgnoreJunk -progress
 /home/ue4/UnrealEngine/Engine/Binaries/Linux/UnrealEditor-Linux-DebugGame /project/$unreal_project_name.uproject $args
