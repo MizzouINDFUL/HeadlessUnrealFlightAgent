@@ -12,24 +12,6 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Editor/UnrealEd/Public/Editor.h"
 
-#include "MindfulNotifier.h"
-
-void UMindfulLib::AddNotifier(UObject* WorldContext)
-{
-    //Check if there is already an instance of the actor
-    TArray<AActor*> FoundActors;
-    UGameplayStatics::GetAllActorsOfClass(WorldContext, AMindfulNotifier::StaticClass(), FoundActors);
-    if (FoundActors.Num() > 0)
-    {
-        return;
-    }
-
-    //Spawn the AMindfulNotifier actor
-    UWorld* World = WorldContext->GetWorld(); //GEngine->GetWorldFromContextObject(WorldContext);
-    FActorSpawnParameters SpawnParams;
-    World->SpawnActor<AMindfulNotifier>(SpawnParams);
-}
-
 void UMindfulLib::AddRainFollow(UObject* WorldContext, float Intensity)
 {
     //Check if there is already an instance of the actor

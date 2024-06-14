@@ -19,9 +19,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MindfulLib")
 	static void AddRainFollow(UObject* WorldContext, float Intensity);
 
-	UFUNCTION(BlueprintCallable, Category = "MindfulLib")
-	static void AddNotifier(UObject* WorldContext);
-
 	UFUNCTION(BlueprintCallable, Category="MindfulLib")
 	static void StartLife();
 
