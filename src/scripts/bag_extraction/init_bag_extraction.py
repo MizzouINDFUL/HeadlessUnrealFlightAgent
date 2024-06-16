@@ -8,18 +8,13 @@ import yaml
 
 port = 1234
 
-#if there is an argument passed, it is how many messages are expected in each topic
-num_msgs = -1
+config_path = "/config.yml" 
 
-config_path = "/config.yml"
 if len(sys.argv) > 1:
-    num_msgs = int(sys.argv[1])
-
-if len(sys.argv) > 2:
     port = int(sys.argv[2])
 
-if len(sys.argv) > 3:
-    config_path = sys.argv[3]
+if len(sys.argv) > 2:
+    config_path = sys.argv[2]
 
 is_running_from_container = True
 
@@ -67,9 +62,6 @@ for topic in list(topics_and_num_msgs):
 min_num_msgs = 0
 if len(topics_and_num_msgs) > 0:
     min_num_msgs = min(topics_and_num_msgs.values())
-
-if num_msgs != -1:
-    min_num_msgs = min(min_num_msgs, num_msgs)
 
 #keep a copy of the original topics_and_num_msgs before replacing every value with min_num_msgs
 actual_topics_and_num_msgs = topics_and_num_msgs.copy()
