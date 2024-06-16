@@ -92,7 +92,11 @@ tmux send-keys -t $SESSIONNAME:ROS "$EXPORT_COMMAND" C-m
 
 tmux pipe-pane -o -t $SESSIONNAME:UnrealEngine "tee -a $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log >> $HOME_DIR/tmp/$SIM_START_DATE-Unreal.log"
 tmux send-keys -t $SESSIONNAME:UnrealEngine "$HOME_DIR/src/scripts/unreal/$init_unreal_script" C-m
-# bind_script_to_event "External Command Line object is initialized" $HOME_DIR/src/scripts/unreal/start_tellunreal.sh
+
+LOG_ROS=$(yq e '.ros.log' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
+if [ "$LOG_ROS" == true ]; then
+    tmux pipe-pane -o -t $SESSIONNAME:ROS "tee -a $HOME_DIR/src/logs/$SESSIONNAME-ROS.log >> $HOME_DIR/tmp/$SIM_START_DATE-ROS.log"
+fi
 
 ROS_PORT=$(yq e '.ports_to_reserve[3].rosbridge_listener' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 ENABLE_ROS=$(yq e '.ros.enable' $HOME_DIR/tmp/$SESSIONNAME-config.yml)

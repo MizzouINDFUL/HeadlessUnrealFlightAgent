@@ -51,16 +51,15 @@ if [ $SHOULD_EXTRACT == true ]; then
         tmux kill-window -t $SESSIONNAME:Bags-Extract; \
         " C-m
 
-    init_extraction_argument=""
-    if [ $simulation_target_is_time == false ]; then
-        init_extraction_argument="$simulation_target"
-    fi
-
     #execute rosbag info -y -k topics ros.bag > topics.yml in ROS-Bags
     if [ $ROS_USE_DOCKER == true ]; then
-        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT" C-m
+        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 /scripts/bag_extraction/init_bag_extraction.py $EXTRACTION_PORT" C-m
     else
-        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/init_bag_extraction.py $init_extraction_argument $EXTRACTION_PORT $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" C-m
+        tmux send-keys -t $SESSIONNAME:ROS-Bags "mv -f *.bag ros.bag; rosbag info -y -k topics ros.bag > topics.yml; python3 $UELAUNCHER_HOME/src/scripts/bag_extraction/init_bag_extraction.py $EXTRACTION_PORT $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml" C-m
+    fi
+    ROS_LOG_EXTRACTION=$(yq e '.ros.log_extraction' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+    if [ "$ROS_LOG_EXTRACTION" == true ]; then
+        tmux pipe-pane -o -t $SESSIONNAME:ROS-Bags "tee -a $UELAUNCHER_HOME/src/logs/$SESSIONNAME-ROS-Bags_init_extraction.log >> $UELAUNCHER_HOME/tmp/$SIM_START_DATE-ROS-Bags_init_extraction.log"
     fi
 else
     echo "Not extracting bags"

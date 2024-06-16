@@ -51,8 +51,10 @@ simulation:
 ros:
   enable: true
   use_docker: false
+  log: true
   enable_rosbag: true
   extract_bags: true
+  log_extraction: true
   docker_image: "unreal-launcher-airsim-ros"
   local_path: "/opt/ros/noetic/"
 
@@ -60,6 +62,7 @@ ros:
 airsim:
   enable: true
   use_docker: false
+  log: false
   docker_image: "unreal-launcher-airsim-ros"
   lawn_mower_height: 35
   lawn_mower_speed: 5
@@ -76,7 +79,7 @@ ports_to_reserve:
   - tellunreal_listener
   - life_restart_listener
   - rosbag_extraction_listener
-  - rosbridge_listener
+  - rosbridge_listener: 9090
   - airsim_api
   - airsim_world_bounds_msg
 

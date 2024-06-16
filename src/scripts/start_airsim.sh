@@ -18,6 +18,11 @@ if [ $RUN_AIRSIM == true ]; then
     else
         tmux new-window -t $SESSIONNAME -n AirSim "bash -c \"$UELAUNCHER_HOME/src/airsim-ros/shared/start_tmux_windows.sh $LIFE_NUM $MAX_LIVES $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml \"; exec bash";
     fi
+
+    LOG_AIRSIM=$(yq e '.airsim.log' $UELAUNCHER_HOME/tmp/$SESSIONNAME-config.yml)
+    if [ "$LOG_AIRSIM" == true ]; then
+        tmux pipe-pane -o -t $SESSIONNAME:AirSim "tee -a $UELAUNCHER_HOME/src/logs/$SESSIONNAME-AirSim.log >> $UELAUNCHER_HOME/tmp/$SIM_START_DATE-AirSim.log"
+    fi
 fi
 
 sleep 30;
