@@ -11,7 +11,7 @@ port = 1234
 config_path = "/config.yml" 
 
 if len(sys.argv) > 1:
-    port = int(sys.argv[2])
+    port = int(sys.argv[1])
 
 if len(sys.argv) > 2:
     config_path = sys.argv[2]
