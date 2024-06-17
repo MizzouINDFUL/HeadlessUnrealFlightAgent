@@ -43,6 +43,8 @@ with open(config_path, 'r') as stream:
 class ImageExtractor():
     def __init__(self) -> None:
         self.session_path = "/session/"
+        if not runninng_from_container:
+            self.session_path = os.path.join("bags/", sessionname)
 
         # Get the latest subfolder
         self.session_path = self.session_path + str(curr_life)
