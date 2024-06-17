@@ -28,11 +28,18 @@ if os.path.exists(config_path):
 
         is_running_from_container = config["ros"]["use_docker"]
 
+        if is_running_from_container:
+            print("Running from container")
+        else:
+            print("Running from host")
+
         port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
 
 topics = [key for x in yaml.safe_load_all(open('topics.yml')) for key in x]
 topic_names = [x['topic'] for x in topics]
 topics_and_num_msgs = {x['topic']: x['messages'] for x in topics}
+
+print("topics: " + str(topic_names))
 
 #in topic names, remove /$SESSIONNAME from the beginning of each topic
 topic_names = [x.replace('/' + sessionname, '') for x in topic_names]
@@ -48,7 +55,15 @@ topics_and_num_msgs = {x.replace('/', '_') + '.py': topics_and_num_msgs[x] for x
 files = glob.glob('/scripts/bag_extraction/topics/*.py')
 
 if not is_running_from_container:
-    files = glob.glob('src/scripts/bag_extraction/topics/*.py')
+    print("Running from host")
+    files = glob.glob('../../../src/scripts/bag_extraction/topics/*.py')
+    #print pwd
+    os.system('pwd')
+else:
+    print("Running from container")
+
+
+print("files: " + str(files))
 
 files = [os.path.basename(x) for x in files]
 files = [x for x in files if x in topic_names]

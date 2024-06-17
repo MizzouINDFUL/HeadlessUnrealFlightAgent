@@ -11,6 +11,10 @@ if len(sys.argv) < 4:
     print("usage: python3 _unreal_ros_camera_info.py num_messages real_num_messages config_path")
     exit(1)
 
+port = 1234
+curr_life = 1
+sessionname = ""
+runninng_from_container = False
 config_path = sys.argv[3]
 
 if not os.path.exists(config_path):
@@ -23,6 +27,7 @@ with open(config_path, 'r') as stream:
         port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
         curr_life = config["current_life"]
         sessionname = config["sessionname"]
+        runninng_from_container = config["ros"]["use_docker"]
         print(f"Port number found in the config file: {port}")
         print(f"Current life found in the config file: {curr_life}")
         print(f"Session name found in the config file: {sessionname}")
@@ -33,6 +38,10 @@ with open(config_path, 'r') as stream:
 class CameraInfoExtractor():
     def __init__(self) -> None:
         self.session_path = "/session/"
+        if not runninng_from_container:
+            self.session_path = os.path.join("bags/", sessionname)
+        print("extracting images to " + self.session_path)
+
         self.session_path += str(curr_life)
         print("extracting camera info to " + self.session_path)
         self.camera_info_path = os.path.join(self.session_path, "camera_info.json")
