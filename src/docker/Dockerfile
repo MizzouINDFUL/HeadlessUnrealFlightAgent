@@ -295,6 +295,10 @@ RUN . /opt/ros/noetic/setup.sh && \
     mkdir /root/AirSim && \
     ln -s /Colosseum/ros /root/AirSim
 
+#Install OpenEXR for Python
+RUN apt-get install -y libopenexr-dev && \
+    pip install openexr
+
 # Create a setup script
 RUN touch /root/setup.sh
 RUN echo "source /root/AirSim/ros/devel/setup.bash" >> /root/setup.sh

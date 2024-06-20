@@ -47,3 +47,7 @@ RUN . /opt/ros/noetic/setup.sh && \
 	pip install airsim && \
 	pip install cvbridge3 && \
     pip install pyyaml
+
+#Install OpenEXR for Python
+RUN apt-get install -y libopenexr-dev && \
+    pip install openexr
