@@ -49,7 +49,7 @@ class ImageExtractor():
         print("extracting images to " + self.session_path)
 
         # Get the latest subfolder
-        self.session_path = self.session_path + str(curr_life)
+        self.session_path = os.path.join(self.session_path, str(curr_life))
         
         print("extracting images to " + self.session_path)
 

@@ -46,8 +46,9 @@ class ImageExtractor():
         if not running_from_container:
             self.session_path = os.path.join("bags/", sessionname)
 
-        self.session_path = self.session_path + str(curr_life)
         print("extracting images to " + self.session_path)
+        self.session_path = os.path.join(self.session_path, str(curr_life))
+        
 
         self.rgb_path = os.path.join(self.session_path, "depth")
         if not os.path.exists(self.rgb_path):

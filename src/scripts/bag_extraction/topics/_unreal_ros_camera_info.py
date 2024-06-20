@@ -42,7 +42,7 @@ class CameraInfoExtractor():
             self.session_path = os.path.join("bags/", sessionname)
         print("extracting images to " + self.session_path)
 
-        self.session_path += str(curr_life)
+        self.session_path = os.path.join(self.session_path, str(curr_life))
         print("extracting camera info to " + self.session_path)
         self.camera_info_path = os.path.join(self.session_path, "camera_info.json")
 
