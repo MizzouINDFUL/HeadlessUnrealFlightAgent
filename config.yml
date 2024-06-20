@@ -19,7 +19,7 @@ unreal:
   use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
   docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
   local_path: "/home/mindful/EpicGames/UE5.1"
-  project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
+  project_path: "/home/mindful/Documents/UnrealProjects/tmp/Blocks"
 
   arguments: #arguments passed to UnrealEditor-Cmd.sh
     - RenderOffscreen #render offscreen aka headless
