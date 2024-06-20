@@ -4,9 +4,10 @@ session:
   basename: "BlocksDocker" #base name for a tmux session
   max: 10 #max number of tmux sessions with that basename - experimental stuff for parallel runs
   start_life: 1
-  end_life: 1
+  end_life: 4
   max_lives: 100
   skip_pulgin_install: false
+  wait_for_session_to_end: true
   auto_attach: true
   target_is_time: false
   target: 20

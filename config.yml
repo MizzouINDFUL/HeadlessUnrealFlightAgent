@@ -7,7 +7,8 @@ session:
   end_life: 1
   max_lives: 100
   skip_pulgin_install: false
-  auto_attach: true
+  auto_attach: false
+  wait_for_session_to_end: true
   target_is_time: false
   target: 20
 

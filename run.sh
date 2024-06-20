@@ -63,13 +63,15 @@ fi
 touch $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log
 echo "" > $HOME_DIR/src/logs/$SESSIONNAME-Unreal.log
 
+
+UNREAL_PROJECT_PATH=$(yq e '.unreal.project_path' $HOME_DIR/tmp/$SESSIONNAME-config.yml)
 #go to project directory and delete Saved/Crashes and Saved/Autosaves. If the game wasn't closed properly before,
 #this next run will propmt us with a "Restore Packages" window. That window is not interactive in headless mode and so the game will not start
-rm -r $unreal_project_path/Saved/Crashes > /dev/null 2>&1
-rm -r $unreal_project_path/Saved/Autosaves > /dev/null 2>&1
+rm -r $UNREAL_PROJECT_PATH/Saved/Crashes > /dev/null 2>&1
+rm -r $UNREAL_PROJECT_PATH/Saved/Autosaves > /dev/null 2>&1
 
 #get the name of the game project from the config file parameter $unreal_project_path. Get the name of the last folder in that path
-GAME_PROJECT_NAME=$(echo $unreal_project_path | rev | cut -d'/' -f1 | rev)
+GAME_PROJECT_NAME=$(echo $UNREAL_PROJECT_PATH | rev | cut -d'/' -f1 | rev)
 echo "GAME_PROJECT_NAME: $GAME_PROJECT_NAME"
 
 EXPORT_COMMAND="export SESSIONNAME=$SESSIONNAME; export UELAUNCHER_HOME=$UELAUNCHER_HOME; export SIM_START_DATE=$SIM_START_DATE; export SESSIONROOT=$SESSIONROOT; export GAME_PROJECT_NAME=$GAME_PROJECT_NAME"
@@ -131,19 +133,20 @@ do
     bind_script_to_event "$event" $script $clear_logs
 done
 
-# TOTAL_CALLS=$(python3 src/scripts/get_num_bindings.py $1)
-# for ((i=0; i<$TOTAL_CALLS; i++))
-# do
-#     event=$(python3 src/scripts/get_call_args.py $1 $i 0)
-#     script=$(python3 src/scripts/get_call_args.py $1 $i 1)
-#     clear_logs=$(python3 src/scripts/get_call_args.py $1 $i 2)
-
-#     bind_script_to_event "$event" $script $clear_logs
-# done
-
 tmux set -g mouse on
 
 AUTO_ATTACH=$(yq e '.session.auto_attach' $1)
 if [ $AUTO_ATTACH == true ]; then
     tmux attach-session -t $SESSIONNAME:ROS
+fi
+
+WAIT_FOR_SESSION_END=$(yq e '.session.wait_for_session_to_end' $1)
+#If the session is not supposed to wait for the Unreal Engine to finish, we can return to the terminal
+if [ $WAIT_FOR_SESSION_END == false ]; then
+    exit 0
+else
+    #check in a while loop if the session name SESSIONNAME exists in the list of all sessions
+    while [[ $(tmux list-sessions -F "#{session_name}" 2>/dev/null) == *$SESSIONNAME* ]]; do
+        sleep 1
+    done
 fi
