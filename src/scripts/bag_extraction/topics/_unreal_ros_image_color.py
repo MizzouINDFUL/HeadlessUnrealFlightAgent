@@ -17,6 +17,7 @@ else:
 
 port = 1234
 curr_life = 1
+session_basename = ""
 sessionname = ""
 runninng_from_container = False
 config_path = sys.argv[3]
@@ -30,11 +31,12 @@ with open(config_path, 'r') as stream:
         config = yaml.safe_load(stream)
         port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
         curr_life = config["current_life"]
-        sessionname = config["session"]["basename"]
+        session_basename = config["session"]["basename"]
+        sessionname = config["sessionname"]
         runninng_from_container = config["ros"]["use_docker"]
         print(f"Port number found in the config file: {port}")
         print(f"Current life found in the config file: {curr_life}")
-        print(f"Session name found in the config file: {sessionname}")
+        print(f"Session name found in the config file: {session_basename}")
     except yaml.YAMLError as exc:
         print(exc)
         exit(1)
@@ -44,7 +46,7 @@ class ImageExtractor():
     def __init__(self) -> None:
         self.session_path = "/session/"
         if not runninng_from_container:
-            self.session_path = os.path.join("bags/", sessionname)
+            self.session_path = os.path.join("bags/", session_basename)
         
         print("extracting images to " + self.session_path)
 
