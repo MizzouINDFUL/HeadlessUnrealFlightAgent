@@ -26,7 +26,7 @@ with open(config_path, 'r') as stream:
         config = yaml.safe_load(stream)
         port = config["ports_to_reserve"][2]["rosbag_extraction_listener"]
         curr_life = config["current_life"]
-        sessionname = config["sessionname"]
+        sessionname = config["session"]["basename"]
         runninng_from_container = config["ros"]["use_docker"]
         print(f"Port number found in the config file: {port}")
         print(f"Current life found in the config file: {curr_life}")
