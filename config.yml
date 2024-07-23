@@ -4,11 +4,11 @@ session:
   basename: "Blocks" #base name for a tmux session
   max: 10 #max number of tmux sessions with that basename - experimental stuff for parallel runs
   start_life: 1
-  end_life: 1
+  end_life: 2
   max_lives: 100
   skip_pulgin_install: false
-  auto_attach: false
-  wait_for_session_to_end: true
+  auto_attach: true
+  wait_for_session_to_end: false
   target_is_time: false
   target: 20
 
@@ -19,14 +19,14 @@ unreal:
   use_docker: false #use docker to run the editor - otherwise will use the local copy of the engine
   docker_image: "ghcr.io/epicgames/unreal-engine:dev-5.1.0"
   local_path: "/home/mindful/EpicGames/UE5.1"
-  project_path: "/home/mindful/Documents/UnrealProjects/tmp/Blocks"
+  project_path: "/home/mindful/Documents/UnrealProjects/Blocks"
 
   arguments: #arguments passed to UnrealEditor-Cmd.sh
     - RenderOffscreen #render offscreen aka headless
     - imgOutputX: 2048 #resolution of the output image
     - imgOutputY: 1024
     - logcmds: "LogDerivedDataCacheVerbose"
-    - levels_to_load: "1:/Game/FlyingCPP/Maps/FlyingExampleMap+3:/Game/FlyingCPP/Maps/FlyingExampleMap2" #Explanation: starting from life 1 load FlyingExampleMap, starting from life 3 load FlyingExampleMap2
+    - levels_to_load: "1:/Game/FlyingCPP/Maps/FlyingExampleMap+2:/Game/FlyingCPP/Maps/FlyingExampleMap2" #Explanation: starting from life 1 load FlyingExampleMap, starting from life 3 load FlyingExampleMap2
     - layers_to_export: "/Engine/BufferVisualization/FinalImage.FinalImage+/MindfulPlugin/MRQ/MRQ_StencilMask.MRQ_StencilMask+/Engine/BufferVisualization/SceneDepth.SceneDepth"
     - topic_to_layer: "/unreal_ros/image_color:FinalImage+/unreal_ros/ground_truth_color:FinalImageMRQ_StencilMask+/unreal_ros/image_depth:FinalImageSceneDepth"
     - ground_truth: "ASplineCar7:car"
@@ -62,6 +62,8 @@ airsim:
   enable: true
   use_docker: true
   docker_image: "unreal-launcher-airsim-ros"
+  lawn_mower_height_min: 25
+  lawn_mower_height_max: 50
   lawn_mower_height: 35
   lawn_mower_speed: 5
   lawn_mower_grid_spacing: 10

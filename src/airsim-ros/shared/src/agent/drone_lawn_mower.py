@@ -5,11 +5,13 @@ import yaml
 import sys
 import time
 import socket
+import random
 
 # lawn mower pattern parameters
 grid_spacing = 35  # Distance between grid lines
 speed = 25  # Movement speed in m/s
-height = 35  # Fixed altitude for the grid search, adjust as needed
+height_min = 30  # Minimum height for the grid search
+height_max = 40  # Maximum height for the grid search
 adjust_yaw = False  # Adjust yaw to face the next target point
 
 # Check if enough arguments are provided
@@ -23,7 +25,7 @@ if len(sys.argv) > 3:
 
 print("Config file: " + config_path)
 
-print("Behavior of this agent: drone will get up and start in a grid search pattern.")
+print("Behavior of this agent: drone will get up and start in a grid search pattern with varying heights.")
 port = 41451
 world_bounds_msg_listen_port = -1
 
@@ -39,7 +41,11 @@ if os.path.exists(config_path):
 
         grid_spacing = config["airsim"]["lawn_mower_grid_spacing"]
         speed = config["airsim"]["lawn_mower_speed"]
-        height = config["airsim"]["lawn_mower_height"]
+        
+        # Read height range from config if available, otherwise use default values
+        height_min = config["airsim"].get("lawn_mower_height_min", height_min)
+        height_max = config["airsim"].get("lawn_mower_height_max", height_max)
+        
         adjust_yaw = config["airsim"]["lawn_mower_face_towards_velocity"]
 else:
     print("Port number not found in the config file.")
@@ -119,6 +125,10 @@ def calculate_yaw(current_x, current_y, target_x, target_y):
     yaw = math.atan2(delta_y, delta_x)
     return yaw
 
+# Function to get a random height within the specified range
+def get_random_height():
+    return random.uniform(height_min, height_max)
+
 # Perform lawn mower pattern
 y = start_y
 direction = 1  # Start by moving right
@@ -137,9 +147,10 @@ while y <= max_y:
     client.simSetVehiclePose(current_pose, True)
     time.sleep(1)  # Small delay to ensure orientation update
 
-    # Move to the start of the current row
-    client.moveToPositionAsync(x_start, y, -target_z, speed).join()
-    print(f"Moving to start of row: x={x_start}, y={y}")
+    # Move to the start of the current row with a random height
+    random_height = get_random_height()
+    client.moveToPositionAsync(x_start, y, -random_height, speed).join()
+    print(f"Moving to start of row: x={x_start}, y={y}, z={random_height}")
 
     # Calculate yaw angle to face the end of the row
     yaw = calculate_yaw(x_start, y, x_end, y)
@@ -152,9 +163,10 @@ while y <= max_y:
     
     time.sleep(1)  # Small delay to ensure orientation update
 
-    # Move across the row
-    client.moveToPositionAsync(x_end, y, -target_z, speed).join()
-    print(f"Moving across row to: x={x_end}, y={y}")
+    # Move across the row with a new random height
+    random_height = get_random_height()
+    client.moveToPositionAsync(x_end, y, -random_height, speed).join()
+    print(f"Moving across row to: x={x_end}, y={y}, z={random_height}")
 
     # Move to the next row
     y += grid_spacing

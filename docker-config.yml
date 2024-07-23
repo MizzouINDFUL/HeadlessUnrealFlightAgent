@@ -8,7 +8,7 @@ session:
   max_lives: 100
   skip_pulgin_install: false
   wait_for_session_to_end: true
-  auto_attach: true
+  auto_attach: false
   target_is_time: false
   target: 20
 
@@ -65,6 +65,8 @@ airsim:
   use_docker: false
   log: false
   docker_image: "unreal-launcher-airsim-ros"
+  lawn_mower_height_min: 25
+  lawn_mower_height_max: 50
   lawn_mower_height: 35
   lawn_mower_speed: 5
   lawn_mower_grid_spacing: 10
